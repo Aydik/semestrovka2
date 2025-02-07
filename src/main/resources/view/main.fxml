@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+
+<AnchorPane fx:id="rootPane"
+            styleClass="background-pane"
+            xmlns="http://javafx.com/javafx/11.0.14-internal"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ru.itis.inf301.semestrovka2.controller.pages.AppStartController">
+</AnchorPane>
