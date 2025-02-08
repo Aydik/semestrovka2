@@ -2,6 +2,7 @@ package ru.itis.inf301.semestrovka2.controller.pages;
 
 import javafx.fxml.FXML;
 import javafx.scene.layout.Pane;
+import ru.itis.inf301.semestrovka2.client.ClientService;
 import ru.itis.inf301.semestrovka2.controller.util.FXMLLoaderUtil;
 
 public class AppStartController implements RootPane {

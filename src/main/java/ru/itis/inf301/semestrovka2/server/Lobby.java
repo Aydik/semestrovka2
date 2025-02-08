@@ -1,6 +1,9 @@
 package ru.itis.inf301.semestrovka2.server;
 
 import lombok.Getter;
+import ru.itis.inf301.semestrovka2.client.Client;
+import ru.itis.inf301.semestrovka2.client.ClientService;
+import ru.itis.inf301.semestrovka2.model.Board;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,16 +13,20 @@ public class Lobby implements Runnable {
     @Getter
     private final int id;
     @Getter
-    private final List<ClientHandler> clients;
+    private final List<Client> clients;
+    @Getter
     private volatile boolean started;
+    @Getter
+    private Board board;
 
     public Lobby(int id) {
         this.id = id;
         this.clients = new ArrayList<>();
         this.started = false;
+        this.board = new Board();
     }
 
-    public void addClient(ClientHandler client) {
+    public void addClient(Client client) {
         if (clients.size() < 2) {
             clients.add(client);
             client.sendMessage("Waiting for another player...");
@@ -31,7 +38,7 @@ public class Lobby implements Runnable {
         }
     }
 
-    public void removeClient(ClientHandler client) {
+    public void removeClient(Client client) {
         clients.remove(client);
     }
 
@@ -46,28 +53,28 @@ public class Lobby implements Runnable {
             int curClientIndex = 0;
             String message;
             while (!clients.isEmpty()) {
-                sendMessage("Очередь игрока " + (curClientIndex + 1));
-                sendMessageToCurrentPlayer(curClientIndex, "Ваш ход");
-                try {
-                    message = clients.get(curClientIndex).getMessage();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-
-                if (message == null || message.trim().isEmpty() || message.equalsIgnoreCase("exit")) {
-                    // Обработка выхода игрока
-                    clients.get(curClientIndex).sendMessage("Вы покинули игру.");
-                    removeClient(clients.get(curClientIndex));  // Убираем игрока из лобби
-                    if (clients.isEmpty()) {
-                        sendMessage("Игра завершена. Все игроки покинули лобби.");
-                        break;
-                    } else {
-                        sendMessage("Игрок " + (curClientIndex + 1) + " покинул игру. Осталось " + clients.size() + " игроков.");
-                    }
-                } else {
-                    sendMessage("Игрок " + (curClientIndex + 1) + ": " + message);
-                    curClientIndex = (curClientIndex + 1) % clients.size();  // Переводим очередь на следующего игрока
-                }
+//                sendMessage("Очередь игрока " + (curClientIndex + 1));
+//                sendMessageToCurrentPlayer(curClientIndex, "Ваш ход");
+//                try {
+//                    message = clients.get(curClientIndex).getMessage();
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//
+//                if (message == null || message.trim().isEmpty() || message.equalsIgnoreCase("exit")) {
+//                    // Обработка выхода игрока
+//                    clients.get(curClientIndex).sendMessage("Вы покинули игру.");
+//                    removeClient(clients.get(curClientIndex));  // Убираем игрока из лобби
+//                    if (clients.isEmpty()) {
+//                        sendMessage("Игра завершена. Все игроки покинули лобби.");
+//                        break;
+//                    } else {
+//                        sendMessage("Игрок " + (curClientIndex + 1) + " покинул игру. Осталось " + clients.size() + " игроков.");
+//                    }
+//                } else {
+//                    sendMessage("Игрок " + (curClientIndex + 1) + ": " + message);
+//                    curClientIndex = (curClientIndex + 1) % clients.size();  // Переводим очередь на следующего игрока
+//                }
             }
         }
     }
@@ -80,7 +87,7 @@ public class Lobby implements Runnable {
     }
 
     public void sendMessage(String message) {
-        for (ClientHandler client : clients) {
+        for (Client client : clients) {
             client.sendMessage(message);
         }
     }

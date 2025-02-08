@@ -1,11 +1,14 @@
 package ru.itis.inf301.semestrovka2.client;
 
+import lombok.Getter;
+
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class Client {
+    @Getter
     private Socket clientSocket;
     private BufferedWriter out;
     private BufferedReader in;
@@ -23,7 +26,7 @@ public class Client {
         }
     }
 
-    private void startReadingMessages() {
+    public void startReadingMessages() {
         Thread readerThread = new Thread(() -> {
             try {
                 while (true) {
