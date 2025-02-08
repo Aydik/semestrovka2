@@ -18,8 +18,8 @@ public class App extends Application {
 
         try {
             Parent root = fxmlLoader.load();
-            stage.setScene(new Scene(root));
-//            stage.setFullScreen(true);
+            stage.setScene(new Scene(root, 700, 700));
+            stage.setResizable(false);
             stage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
             stage.show();
         } catch (IOException e) {

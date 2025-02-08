@@ -21,8 +21,7 @@ public class LobbyPageController implements RootPane {
     public void initialize() {
         Random random = new Random();
         String lobby_id = Integer.toString(random.nextInt(1000000));
-        lobbyId.setText(lobby_id);
-        clientService = new ClientService(lobby_id);
+        wait(lobby_id);
     }
 
     @FXML
@@ -30,6 +29,16 @@ public class LobbyPageController implements RootPane {
         clientService.disconnect();
         rootPane.getChildren().clear();
         FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane);
+    }
+
+    public void wait(String lobby_id) {
+        lobbyId.setText(lobby_id);
+        clientService = new ClientService(lobby_id);
+
+        // ждать подключения второго игрока
+
+        // rootPane.getChildren().clear();
+        // FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane);
     }
 
 
