@@ -24,12 +24,14 @@ public class ConnectToLobbyPageController implements RootPane {
     @FXML
     public void back() {
         rootPane.getChildren().clear();
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/start-game.fxml", rootPane);
+        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane);
     }
 
     @FXML
     public void connect() {
         System.out.println(textField.getText());
+        rootPane.getChildren().clear();
+        FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane);
     }
 
 

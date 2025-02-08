@@ -6,7 +6,7 @@
       AnchorPane.rightAnchor="50" AnchorPane.topAnchor="50"
       xmlns="http://javafx.com/javafx/11.0.14-internal"
       xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="ru.itis.inf301.semestrovka2.controller.pages.StartPageController">
+      fx:controller="ru.itis.inf301.semestrovka2.controller.pages.MainMenuPageController">
     <Button mnemonicParsing="false" onAction="#createLobby" text="Создать лобби"/>
     <Button mnemonicParsing="false" onAction="#connectToLobby" text="Подключиться по ключу"/>
 </VBox>
