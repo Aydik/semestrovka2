@@ -13,6 +13,7 @@ public class LobbyPageController implements RootPane {
 
     @FXML
     public Pane rootPane;
+
     @FXML
     public Text lobbyId;
 
