@@ -30,8 +30,14 @@ public class ConnectToLobbyPageController implements RootPane {
     @FXML
     public void connect() {
         System.out.println(textField.getText());
+        // условие, что не больше 1000000
+
+        // else вывести ошибку
+
+        // создаем перейти в лобби с параметром textField.getText()
         rootPane.getChildren().clear();
         FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane);
+
     }
 
 
