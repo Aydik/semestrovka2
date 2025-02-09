@@ -2,9 +2,7 @@ package ru.itis.inf301.semestrovka2.model;
 
 import lombok.Getter;
 import lombok.Setter;
-
 import java.util.Random;
-
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
 
@@ -17,8 +15,8 @@ public class Board {
     private int user1_y;
     private int[][] vertical = new int[9][8];
     private int[][] horizontal = new int[8][9];
+    @Getter
     private int hod;
-
 
     public Board() {
         user0_x = 8;

@@ -1,5 +1,6 @@
 package ru.itis.inf301.semestrovka2.controller.pages;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
@@ -7,17 +8,16 @@ import javafx.scene.layout.Pane;
 import ru.itis.inf301.semestrovka2.client.Client;
 import ru.itis.inf301.semestrovka2.client.ClientService;
 import ru.itis.inf301.semestrovka2.controller.util.FXMLLoaderUtil;
-import ru.itis.inf301.semestrovka2.server.Lobby;
 import ru.itis.inf301.semestrovka2.server.Server;
 
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 public class ConnectToLobbyPageController implements RootPane {
-
+    private ClientService clientService;
+    private Client client;
     @FXML
     public Pane rootPane;
-
     @FXML
     public TextField textField;
 
@@ -28,39 +28,46 @@ public class ConnectToLobbyPageController implements RootPane {
 
     @FXML
     public void back() {
+        if (clientService != null) {
+            clientService.disconnect();
+        }
         rootPane.getChildren().clear();
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane);
+        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane, Optional.empty());
     }
 
     @FXML
     public void connect() {
         System.out.println(textField.getText());
-        // условие, что не больше 1000000
         int lobbyId = Integer.parseInt(textField.getText());
+
         if (lobbyId <= 1000000) {
-            CopyOnWriteArrayList<Lobby> lobbies = Server.getLobbies();
-            for (Lobby lobby : lobbies) {
-                if (lobby.getId() == lobbyId) {
-                    ClientService clientService = new ClientService(textField.getText());
-                    lobby.addClient(clientService.getClient());
-                    rootPane.getChildren().clear();
-                    FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane);
-                    break;
-                }
+            // Проверяем, подключен ли уже клиент
+            if (clientService == null || !clientService.isConnectedToLobby()) {
+                // Инициализируем клиента и пытаемся подключиться
+                client = new Client();
+                clientService = new ClientService(client);
+                // Создаем подключение в фоновом потоке
+                new Thread(() -> {
+                    clientService.connect(Integer.toString(lobbyId), false);
+                    if (client.getClientSocket() == null) {
+                        Platform.runLater(() -> {
+                            System.err.println("Failed to connect to the server.");
+                        });
+                        return;
+                    }
+                    Platform.runLater(() -> {
+                        System.out.println(clientService.isConnectedToLobby());
+                        rootPane.getChildren().clear(); // Очистка текущего экрана
+                        FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane, Optional.of(clientService));
+                    });
+                }).start();
+            } else {
+                System.err.println("Already connected to a lobby.");
             }
-
-
-
         } else {
-            System.out.println("многа вводишь брат");
+            System.out.println("слишком большое число лобби");
         }
-        // else вывести ошибку
-
-        // создаем перейти в лобби с параметром textField.getText()
-
-
     }
-
 
     @Override
     public void setRootPane(Pane pane) {

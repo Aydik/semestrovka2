@@ -5,13 +5,13 @@ import lombok.Getter;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Scanner;
 
 public class Client {
     @Getter
     private Socket clientSocket;
     private BufferedWriter out;
     private BufferedReader in;
+    private int lobbyId;
 
     public void connect() {
         try {
@@ -19,10 +19,10 @@ public class Client {
             out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8));
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
             System.out.println("Connected to server");
-
-            startReadingMessages();
+//            startReadingMessages();
         } catch (IOException e) {
             System.err.println("Connection error: " + e.getMessage());
+            closeResources();
         }
     }
 
@@ -60,6 +60,23 @@ public class Client {
         }
     }
 
+    public String readMessage() {
+        try {
+            if (in == null) {
+                System.err.println("BufferedReader is not initialized.");
+                return null;
+            }
+            String message = in.readLine();
+            if (message != null) {
+                message = message.replace("[Server]: ", ""); // Убираем префикс "[Server]: "
+            }
+            return message;
+        } catch (IOException e) {
+            System.err.println("Error reading message: " + e.getMessage());
+            return null;
+        }
+    }
+
     public void closeResources() {
         try {
             if (out != null) {
@@ -74,5 +91,13 @@ public class Client {
         } catch (IOException e) {
             System.err.println("Error closing resources: " + e.getMessage());
         }
+    }
+
+    public int getLobbyId() {
+        return lobbyId;
+    }
+
+    public void setLobbyId(int lobbyId) {
+        this.lobbyId = lobbyId;
     }
 }

@@ -1,127 +1,176 @@
-//package ru.itis.inf301.semestrovka2.server;
-//
-//import java.io.*;
-//import java.net.Socket;
-//import java.nio.charset.StandardCharsets;
-//import java.util.concurrent.CopyOnWriteArrayList;
-//
-//public class ClientHandler implements Runnable {
-//    private final Socket socket;
-//    private BufferedWriter writer;
-//    private BufferedReader reader;
-//    private Lobby clientLobby;
-//    private String message;
-//
-//    public ClientHandler(Socket socket) {
-//        this.socket = socket;
-//    }
-//
-//    @Override
-//    public void run() {
-//        try {
-//            reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-//            writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-//            System.out.println("Connected to " + socket.getInetAddress());
-//
-//
-//            connectToLobby();
-//
-//            if (clientLobby.getClients().size() == 2) {
-//                clientLobby.startLobby();
-//            }
-//
-////            while (true) {
-////                message = reader.readLine(); // Читаем строку напрямую
-////                if (message == null || message.trim().isEmpty()) {
-////                    continue;
-////                }
-////                if (message.equalsIgnoreCase("start")) {
-////                    clientLobby.startLobby();
-////                } else {
-////                    clientLobby.sendMessage("Player: " + message); // Отправка сообщения всем игрокам
-////                }
-////            }
-//        } catch (IOException e) {
-//            System.err.println("Connection error: " + socket.getInetAddress() + " - " + e.getMessage());
-//        } finally {
-////            closeResources();
-//        }
-//    }
-//
-//    public void connectToLobby() throws IOException {
-//        // Читаем единственную строку
-//        String input = reader.readLine();
-//        while (input == null || input.trim().isEmpty()) {
-//            input = reader.readLine();
-//        }
-//        int lobbyNumber = Integer.parseInt(input);
-//
-//
-//        CopyOnWriteArrayList<Lobby> lobbies = Server.getLobbies();
-//        boolean inLobby = false;
-//
-//        for (Lobby lobby : lobbies) {
-//            if (lobby.getId() == lobbyNumber) {
-//                lobby.addClient(this);
-//                sendMessage("You have joined the lobby");
-//                clientLobby = lobby;
-//                inLobby = true;
-//                break;
-//            }
-//        }
-//
-//        if (!inLobby) {
-//            Lobby newLobby = new Lobby(lobbyNumber);
-//            lobbies.add(newLobby);
-//            newLobby.addClient(this);
-//            sendMessage("You have joined the lobby");
-//            clientLobby = newLobby;
-//        }
-//    }
-//
-//    public void sendMessage(String message) {
-//        try {
-//            if (writer != null && !socket.isClosed() && !socket.isOutputShutdown()) {
-//                writer.write(message + "\r\n");
-//                writer.flush();
-//            }
-//        } catch (IOException e) {
-//            System.err.println("Error sending message to client: " + socket.getInetAddress() + " - " + e.getMessage());
-//            closeResources();
-//        }
-//    }
-//
-//    private void closeResources() {
-//        try {
-//            if (reader != null) {
-//                reader.close();
-//            }
-//            if (writer != null) {
-//                writer.close();
-//            }
-//            if (socket != null && !socket.isClosed()) {
-//                socket.close();
-//            }
-//            Server.removeClient(this);
-//            if (clientLobby != null) {
-//                clientLobby.removeClient(this);
-//                if (clientLobby.isEmpty()) {
-//                    Server.getLobbies().remove(clientLobby);
-//                }
-//            }
-//        } catch (IOException e) {
-//            System.err.println("Error closing resources: " + e.getMessage());
-//        }
-//    }
-//
-//    public String getMessage() throws IOException {
-//        long startTime = System.currentTimeMillis();
-//        while (System.currentTimeMillis() - startTime < 5000) {  // Тайм-аут 5 секунд
-//            String message = reader.readLine();
-//            if (message != null && !message.trim().isEmpty()) {
-//                return message;
-//            }
-//        }
-//        return null;  // Если тайм-аут истек
-//    }
-//}
+package ru.itis.inf301.semestrovka2.server;
+
+import ru.itis.inf301.semestrovka2.client.Client;
+import ru.itis.inf301.semestrovka2.client.ClientService;
+import java.io.*;
+import java.net.Socket;
+
+public class ClientHandler implements Runnable {
+    private Socket socket;
+    private BufferedReader in;
+    private BufferedWriter out;
+    private Lobby lobby;
+    private ClientService clientService;
+
+    public ClientHandler(Socket socket) {
+        this.socket = socket;
+        try {
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+        } catch (IOException e) {
+            System.err.println("Error setting up streams: " + e.getMessage());
+            close();
+        }
+        this.clientService = null; // Изначально ClientService не установлен
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                String message = in.readLine();
+                if (message == null) break;
+                if (message.startsWith("CREATE_LOBBY") || message.startsWith("JOIN_LOBBY")) {
+                    handleLobbyCommands(message);
+                } else if (message.startsWith("MOVE")) {
+                    handleMoveCommand(message);
+                } else if (message.startsWith("VERTICAL_WALL")) {
+                    handleVerticalWallCommand(message);
+                } else if (message.startsWith("HORIZONTAL_WALL")) {
+                    handleHorizontalWallCommand(message);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Client disconnected.");
+        } finally {
+            close();
+        }
+    }
+
+    private void handleLobbyCommands(String message) throws IOException {
+        if (message.startsWith("CREATE_LOBBY")) {
+            int lobbyId = Integer.parseInt(message.split(" ")[1]);
+            lobby = new Lobby(lobbyId);
+            Server.addLobby(lobby);
+            lobby.addClient(this);
+            // Убираем создание нового ClientService и повторное подключение!
+            sendMessage("Lobby created with ID: " + lobbyId);
+        } else if (message.startsWith("JOIN_LOBBY")) {
+            int lobbyId = Integer.parseInt(message.split(" ")[1]);
+            lobby = Server.findLobbyById(lobbyId);
+            if (lobby != null) {
+                lobby.addClient(this);
+                // Убираем создание нового ClientService и повторное подключение!
+                sendMessage("Joined lobby: " + lobbyId);
+            } else {
+                sendMessage("Lobby not found.");
+            }
+        }
+
+    }
+
+    private void handleMoveCommand(String message) {
+        if (clientService == null || clientService.getBoard() == null) {
+            System.err.println("ClientService or Board is not initialized!");
+            return;
+        }
+        String[] parts = message.split(" ");
+        int user = lobby.getHod(); // Получаем текущего игрока
+        int x = Integer.parseInt(parts[1]);
+        int y = Integer.parseInt(parts[2]);
+        int currentPlayer = Integer.parseInt(parts[3]); // Получаем номер игрока из сообщения
+        // Проверяем, что ход делает правильный игрок
+        if (user != currentPlayer) {
+            System.err.println("Invalid move: wrong player!");
+            sendMessage("Invalid move: wrong player!");
+            return;
+        }
+        if (clientService.getBoard().move(user, x, y)) {
+            lobby.sendMessage("MOVE " + x + " " + y + " " + user); // Рассылаем ход всем игрокам
+            System.out.println("Processed move: MOVE " + x + " " + y + " " + user); // Отладочное сообщение
+        } else {
+            sendMessage("Invalid move: invalid position!");
+        }
+    }
+
+    private void handleVerticalWallCommand(String message) {
+        if (clientService == null || clientService.getBoard() == null) {
+            System.err.println("ClientService or Board is not initialized!");
+            return;
+        }
+        String[] parts = message.split(" ");
+        int user = lobby.getHod();
+        int x = Integer.parseInt(parts[1]);
+        int y = Integer.parseInt(parts[2]);
+        if (user != Integer.parseInt(parts[3])) {
+            System.err.println("Invalid wall placement: wrong player!");
+            sendMessage("Invalid wall placement: wrong player!");
+            return;
+        }
+        if (clientService.getBoard().putVerticalWall(user, x, y)) {
+            lobby.sendMessage("VERTICAL_WALL " + x + " " + y); // Рассылаем сообщение о вертикальной стене
+            System.out.println("Processed vertical wall: VERTICAL_WALL " + x + " " + y); // Отладочное сообщение
+        } else {
+            sendMessage("Invalid wall placement: invalid position!");
+        }
+    }
+
+    private void handleHorizontalWallCommand(String message) {
+        if (clientService == null || clientService.getBoard() == null) {
+            System.err.println("ClientService or Board is not initialized!");
+            return;
+        }
+        String[] parts = message.split(" ");
+        int user = lobby.getHod();
+        int x = Integer.parseInt(parts[1]);
+        int y = Integer.parseInt(parts[2]);
+        if (user != Integer.parseInt(parts[3])) {
+            System.err.println("Invalid wall placement: wrong player!");
+            sendMessage("Invalid wall placement: wrong player!");
+            return;
+        }
+        if (clientService.getBoard().putHorizontalWall(user, x, y)) {
+            lobby.sendMessage("HORIZONTAL_WALL " + x + " " + y); // Рассылаем сообщение о горизонтальной стене
+            System.out.println("Processed horizontal wall: HORIZONTAL_WALL " + x + " " + y); // Отладочное сообщение
+        } else {
+            sendMessage("Invalid wall placement: invalid position!");
+        }
+    }
+
+    public void sendMessage(String message) {
+        try {
+            out.write(message + "\n");
+            out.flush();
+        } catch (IOException e) {
+            System.err.println("Error sending message: " + e.getMessage());
+        }
+    }
+
+    public String getMessage() throws IOException {
+        return in.readLine();
+    }
+
+    public void close() {
+        try {
+            if (out != null) {
+                out.close();
+            }
+            if (in != null) {
+                in.close();
+            }
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Error closing connection: " + e.getMessage());
+        }
+    }
+
+    public void setClientService(ClientService clientService) {
+        this.clientService = clientService;
+    }
+
+    public ClientService getClientService() {
+        return clientService;
+    }
+}
