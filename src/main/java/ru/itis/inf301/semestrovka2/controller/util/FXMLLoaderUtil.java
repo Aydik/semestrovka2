@@ -17,12 +17,11 @@ public class FXMLLoaderUtil {
                 System.err.println("FXML file not found: " + fxmlPath);
                 return;
             }
-
-            // Используем контроллер-фабрику для передачи clientService
+            // Если требуется передать ClientService в GamePageController
             fxmlLoader.setControllerFactory(param -> {
                 if (param.equals(GamePageController.class) && clientService.isPresent()) {
                     GamePageController controller = new GamePageController();
-                    controller.setClientService(clientService.get());  // Передаем clientService
+                    controller.setClientService(clientService.get());
                     return controller;
                 }
                 try {
@@ -32,19 +31,11 @@ public class FXMLLoaderUtil {
                 }
                 return null;
             });
-
-            // Загружаем FXML
             Parent scene = fxmlLoader.load();
-
-            // Получаем контроллер из FXML
             Object controller = fxmlLoader.getController();
-
-            // Устанавливаем rootPane в контроллер, если это нужно
             if (controller instanceof RootPane rootPaneAwareController) {
                 rootPaneAwareController.setRootPane(rootPane);
             }
-
-            // Очищаем и добавляем новый элемент в rootPane
             rootPane.getChildren().clear();
             rootPane.getChildren().add(scene);
         } catch (IOException e) {

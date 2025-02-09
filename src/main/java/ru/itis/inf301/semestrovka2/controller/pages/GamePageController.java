@@ -13,9 +13,6 @@ import javafx.scene.text.Text;
 import lombok.Setter;
 import ru.itis.inf301.semestrovka2.client.ClientService;
 import ru.itis.inf301.semestrovka2.model.Board;
-import ru.itis.inf301.semestrovka2.server.ClientHandler;
-import ru.itis.inf301.semestrovka2.server.Lobby;
-import ru.itis.inf301.semestrovka2.server.Server;
 
 public class GamePageController implements RootPane {
     @Setter
@@ -27,9 +24,9 @@ public class GamePageController implements RootPane {
     @FXML
     public GridPane gridPane;
     private Board board;
-    public GamePageController() {
-        // Конструктор по умолчанию
-    }
+
+    public GamePageController() { }
+
     public GamePageController(ClientService clientService) {
         this.clientService = clientService;
     }
@@ -37,7 +34,7 @@ public class GamePageController implements RootPane {
     @FXML
     public void initialize() {
         if (clientService != null && clientService.isConnectedToLobby()) {
-            board = clientService.getBoard(); // Используем переданный Board из ClientService
+            board = clientService.getBoard();
             if (board == null) {
                 System.err.println("Board is not initialized in initialize()");
                 return;
@@ -61,20 +58,16 @@ public class GamePageController implements RootPane {
                 } else if (row % 2 == 1) {
                     int finalRow = row / 2;
                     int finalCol = col / 2;
-                    if (board.getHorizontal()[finalRow][finalCol] == 1) {
-                        rect = new Rectangle(60, 10, Color.valueOf("#79553D"));
-                    } else {
-                        rect = new Rectangle(60, 10, Color.valueOf("#FAE7B5"));
-                    }
+                    rect = new Rectangle(60, 10, board.getHorizontal()[finalRow][finalCol] == 1
+                            ? Color.valueOf("#79553D")
+                            : Color.valueOf("#FAE7B5"));
                     rect.setOnMouseClicked(event -> putHorizontalWall(finalRow, finalCol));
                 } else if (col % 2 == 1) {
                     int finalRow = row / 2;
                     int finalCol = col / 2;
-                    if (board.getVertical()[finalRow][finalCol] == 1) {
-                        rect = new Rectangle(10, 60, Color.valueOf("#79553D"));
-                    } else {
-                        rect = new Rectangle(10, 60, Color.valueOf("#FAE7B5"));
-                    }
+                    rect = new Rectangle(10, 60, board.getVertical()[finalRow][finalCol] == 1
+                            ? Color.valueOf("#79553D")
+                            : Color.valueOf("#FAE7B5"));
                     rect.setOnMouseClicked(event -> putVerticalWall(finalRow, finalCol));
                 } else {
                     int finalRow = row / 2;
@@ -102,12 +95,8 @@ public class GamePageController implements RootPane {
             System.err.println("ClientService is not initialized!");
             return;
         }
-        if (board.getHod() != getPlayerNumber(clientService)) {
-            System.out.println("It's not your turn yet!");
-            return;
-        }
         if (board.move(board.getHod(), finalRow, finalCol)) {
-            clientService.getClient().sendMessage("MOVE " + finalRow + " " + finalCol + " " + board.getHod());
+            clientService.getClient().addMessage("MOVE " + finalRow + " " + finalCol + " " + board.getHod());
             renderBoard();
         }
     }
@@ -117,12 +106,8 @@ public class GamePageController implements RootPane {
             System.err.println("ClientService is not initialized!");
             return;
         }
-        if (board.getHod() != getPlayerNumber(clientService)) {
-            System.out.println("It's not your turn yet!");
-            return;
-        }
         if (board.putVerticalWall(board.getHod(), finalRow, finalCol)) {
-            clientService.getClient().sendMessage("VERTICAL_WALL " + finalRow + " " + finalCol + " " + board.getHod());
+            clientService.getClient().addMessage("VERTICAL_WALL " + finalRow + " " + finalCol + " " + board.getHod());
             renderBoard();
         }
     }
@@ -132,12 +117,8 @@ public class GamePageController implements RootPane {
             System.err.println("ClientService is not initialized!");
             return;
         }
-        if (board.getHod() != getPlayerNumber(clientService)) {
-            System.out.println("It's not your turn yet!");
-            return;
-        }
         if (board.putHorizontalWall(board.getHod(), finalRow, finalCol)) {
-            clientService.getClient().sendMessage("HORIZONTAL_WALL " + finalRow + " " + finalCol + " " + board.getHod());
+            clientService.getClient().addMessage("HORIZONTAL_WALL " + finalRow + " " + finalCol + " " + board.getHod());
             renderBoard();
         }
     }
@@ -157,39 +138,29 @@ public class GamePageController implements RootPane {
                 while (true) {
                     String message = clientService.getClient().readMessage();
                     if (message == null) continue;
-                    // Убираем префикс "[Server]: " из сообщения
                     message = message.replace("[Server]: ", "");
-                    System.out.println("Received message: " + message); // Отладочное сообщение
+                    System.out.println("Received message: " + message);
                     if (message.startsWith("MOVE")) {
                         String[] parts = message.split(" ");
                         int x = Integer.parseInt(parts[1]);
                         int y = Integer.parseInt(parts[2]);
-                        int player = Integer.parseInt(parts[3]); // Получаем номер игрока
-                        clientService.getBoard().doMove(player, x, y); // Обновляем состояние доски
-                        Platform.runLater(() -> {
-                            System.out.println("Rendering board after MOVE...");
-                            renderBoard(); // Отрисовываем доску
-                        });
+                        int player = Integer.parseInt(parts[3]);
+                        clientService.getBoard().doMove(player, x, y);
+                        Platform.runLater(this::renderBoard);
                     } else if (message.startsWith("VERTICAL_WALL")) {
                         String[] parts = message.split(" ");
                         int x = Integer.parseInt(parts[1]);
                         int y = Integer.parseInt(parts[2]);
-                        int player = Integer.parseInt(parts[3]); // Получаем номер игрока
+                        int player = Integer.parseInt(parts[3]);
                         clientService.getBoard().putVerticalWall(player, x, y);
-                        Platform.runLater(() -> {
-                            System.out.println("Rendering board after VERTICAL_WALL...");
-                            renderBoard();
-                        });
+                        Platform.runLater(this::renderBoard);
                     } else if (message.startsWith("HORIZONTAL_WALL")) {
                         String[] parts = message.split(" ");
                         int x = Integer.parseInt(parts[1]);
                         int y = Integer.parseInt(parts[2]);
-                        int player = Integer.parseInt(parts[3]); // Получаем номер игрока
+                        int player = Integer.parseInt(parts[3]);
                         clientService.getBoard().putHorizontalWall(player, x, y);
-                        Platform.runLater(() -> {
-                            System.out.println("Rendering board after HORIZONTAL_WALL...");
-                            renderBoard();
-                        });
+                        Platform.runLater(this::renderBoard);
                     }
                 }
             } catch (Exception e) {
@@ -197,15 +168,4 @@ public class GamePageController implements RootPane {
             }
         }).start();
     }
-    private int getPlayerNumber(ClientService clientService) {
-        int lobbyId = clientService.getClient().getLobbyId();
-        Lobby lobby = Server.findLobbyById(lobbyId);
-        for (ClientHandler clientHandler : lobby.getClients()) {
-            if (clientHandler.getClientService().equals(clientService)) {
-                return lobby.getClients().indexOf(clientHandler);
-            }
-        }
-        return 0;
-    }
-
 }

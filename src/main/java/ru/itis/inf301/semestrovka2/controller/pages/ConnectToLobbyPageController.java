@@ -39,16 +39,12 @@ public class ConnectToLobbyPageController implements RootPane {
     public void connect() {
         System.out.println(textField.getText());
         int lobbyId = Integer.parseInt(textField.getText());
-
         if (lobbyId <= 1000000) {
-            // Проверяем, подключен ли уже клиент
             if (clientService == null || !clientService.isConnectedToLobby()) {
-                // Инициализируем клиента и пытаемся подключиться
                 client = new Client();
                 clientService = new ClientService(client);
-                // Создаем подключение в фоновом потоке
                 new Thread(() -> {
-                    clientService.connect(Integer.toString(lobbyId), false);
+                    clientService.connect(Integer.toString(lobbyId), false); // подключение к существующему лобби
                     if (client.getClientSocket() == null) {
                         Platform.runLater(() -> {
                             System.err.println("Failed to connect to the server.");
@@ -57,7 +53,7 @@ public class ConnectToLobbyPageController implements RootPane {
                     }
                     Platform.runLater(() -> {
                         System.out.println(clientService.isConnectedToLobby());
-                        rootPane.getChildren().clear(); // Очистка текущего экрана
+                        rootPane.getChildren().clear();
                         FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane, Optional.of(clientService));
                     });
                 }).start();
@@ -77,10 +73,7 @@ public class ConnectToLobbyPageController implements RootPane {
     public void setupNumericField() {
         UnaryOperator<TextFormatter.Change> filter = change -> {
             String newText = change.getControlNewText();
-            if (newText.matches("\\d*")) { // Разрешены только цифры
-                return change;
-            }
-            return null; // Отменяет ввод
+            return newText.matches("\\d*") ? change : null;
         };
         textField.setTextFormatter(new TextFormatter<>(filter));
     }

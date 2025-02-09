@@ -1,5 +1,8 @@
 package ru.itis.inf301.semestrovka2.server;
 
+import ru.itis.inf301.semestrovka2.client.Client;
+import ru.itis.inf301.semestrovka2.client.ClientService;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,7 +18,10 @@ public class Server {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected: " + clientSocket.getInetAddress());
-                ClientHandler clientHandler = new ClientHandler(clientSocket);
+                Client client = new Client(clientSocket);
+                ClientService clientService = new ClientService(client);
+                // Создаем ClientHandler, передавая ему socket и clientService
+                ClientHandler clientHandler = new ClientHandler(clientSocket, clientService);
                 new Thread(clientHandler).start();
             }
         } catch (IOException e) {

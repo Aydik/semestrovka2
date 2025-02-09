@@ -2,7 +2,9 @@ package ru.itis.inf301.semestrovka2.model;
 
 import lombok.Getter;
 import lombok.Setter;
+
 import java.util.Random;
+
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
 
@@ -56,20 +58,13 @@ public class Board {
 
     public boolean move(int user, int x, int y) {
         if (hod != user) return false;
-        int user_x;
-        int user_y;
-        int opponent_x;
-        int opponent_y;
+        int user_x, user_y, opponent_x, opponent_y;
         if (user == 0) {
-            user_x = user0_x;
-            user_y = user0_y;
-            opponent_x = user1_x;
-            opponent_y = user1_y;
+            user_x = user0_x; user_y = user0_y;
+            opponent_x = user1_x; opponent_y = user1_y;
         } else {
-            user_x = user1_x;
-            user_y = user1_y;
-            opponent_x = user0_x;
-            opponent_y = user0_y;
+            user_x = user1_x; user_y = user1_y;
+            opponent_x = user0_x; opponent_y = user0_y;
         }
         int delta = abs(user_x - x) + abs(user_y - y);
         if (delta == 1) {

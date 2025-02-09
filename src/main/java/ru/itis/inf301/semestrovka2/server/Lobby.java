@@ -1,19 +1,16 @@
 package ru.itis.inf301.semestrovka2.server;
 
 import lombok.Getter;
-import ru.itis.inf301.semestrovka2.client.ClientService;
 import ru.itis.inf301.semestrovka2.model.Board;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
 public class Lobby implements Runnable {
-    @Getter
     private final int id;
-    @Getter
     private final List<ClientHandler> clients;
     private volatile boolean started;
-    @Getter
     private final Board board;
 
     public Lobby(int id) {
@@ -38,13 +35,13 @@ public class Lobby implements Runnable {
     public void startLobby() {
         if (!started) {
             started = true;
-//            sendMessage("GAME_START");
-            for (ClientHandler clientHandler : clients) {
-                ClientService clientService = clientHandler.getClientService();
-                if (clientService != null) {
-                    clientService.setBoard(board);
+            // Передаем общее игровое поле всем клиентам через их ClientService
+            for (ClientHandler ch : clients) {
+                if (ch.getClientService() != null) {
+                    ch.getClientService().setBoard(board);
                 }
             }
+            // Запускаем игровой процесс в отдельном потоке
             new Thread(this).start();
         }
     }
@@ -62,6 +59,11 @@ public class Lobby implements Runnable {
         if (started) {
             sendMessage("Game started!");
             int curClientIndex = 0;
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             while (!clients.isEmpty()) {
                 curClientIndex = board.getHod();
                 sendMessage("Очередь игрока " + (curClientIndex));
@@ -71,7 +73,7 @@ public class Lobby implements Runnable {
                     if (message == null || message.trim().isEmpty() || message.equalsIgnoreCase("exit")) {
                         // Обработка выхода игрока
                         clients.get(curClientIndex).sendMessage("Вы покинули игру.");
-                        removeClient(clients.get(curClientIndex));  // Убираем игрока из лобби
+                        removeClient(clients.get(curClientIndex));
                         if (clients.isEmpty()) {
                             sendMessage("Игра завершена. Все игроки покинули лобби.");
                             break;
@@ -80,7 +82,7 @@ public class Lobby implements Runnable {
                         }
                     } else {
                         sendMessage("Игрок " + (curClientIndex + 1) + ": " + message);
-                        curClientIndex = (curClientIndex + 1) % clients.size();  // Переводим очередь на следующего игрока
+                        curClientIndex = (curClientIndex + 1) % clients.size();
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -90,21 +92,19 @@ public class Lobby implements Runnable {
     }
 
     public void sendMessage(String message) {
-        for (ClientHandler client : clients) {
-            System.out.println("Sending message to client: " + message);
-            client.sendMessage(message);
+        System.out.println("Sending message to " + clients.size() + " clients: " + message);
+        for (ClientHandler ch : clients) {
+            // Отправляем сообщение через ClientService объекта клиента
+            if (ch.getClientService() != null && ch.getClientService().getClient() != null) {
+                ch.getClientService().getClient().addMessage(message);
+            }
         }
     }
 
     public void sendMessageToCurrentPlayer(int playerIndex, String message) {
         clients.get(playerIndex).sendMessage(message);
     }
-
     public int getHod() {
-        return board.getHod(); // Получаем текущий ход из игрового поля
-    }
-
-    public Board getBoard() {
-        return board;
+        return board.getHod();
     }
 }
