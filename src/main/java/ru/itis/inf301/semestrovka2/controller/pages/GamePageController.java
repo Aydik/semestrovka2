@@ -9,13 +9,15 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import lombok.Getter;
+import lombok.Setter;
 import ru.itis.inf301.semestrovka2.client.ClientService;
 import ru.itis.inf301.semestrovka2.controller.util.FXMLLoaderUtil;
 import ru.itis.inf301.semestrovka2.model.Board;
-
+@Getter @Setter
 public class GamePageController implements RootPane {
     private Board board;
-    // ClientService clientService;
+    ClientService clientService;
 
     @FXML
     public Pane rootPane;
@@ -121,7 +123,7 @@ public class GamePageController implements RootPane {
     public void redirectToWinPage(int result){
         System.out.println(result);
         rootPane.getChildren().clear();
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane);
+        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane, clientService);
     }
 
     /* создать метод вызывающий ожидание хода соперника

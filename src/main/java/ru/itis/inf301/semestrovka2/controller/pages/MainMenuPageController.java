@@ -11,13 +11,13 @@ public class MainMenuPageController implements RootPane {
     @FXML
     private void createLobby() {
         rootPane.getChildren().clear();
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/lobby.fxml", rootPane);
+        FXMLLoaderUtil.loadFXMLToPane("/view/templates/lobby.fxml", rootPane, null);
     }
 
     @FXML
     private void connectToLobby() {
         rootPane.getChildren().clear();
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/connect-to-lobby.fxml", rootPane);
+        FXMLLoaderUtil.loadFXMLToPane("/view/templates/connect-to-lobby.fxml", rootPane, null);
     }
 
     @Override

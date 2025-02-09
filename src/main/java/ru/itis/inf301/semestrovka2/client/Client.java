@@ -4,11 +4,14 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Client {
     private Socket clientSocket;
     private BufferedWriter out;
     private BufferedReader in;
+    private ConcurrentLinkedQueue<String> messages = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<String> steps = new ConcurrentLinkedQueue<>();
 
     public void connect() {
         try {
@@ -28,10 +31,13 @@ public class Client {
             try {
                 while (true) {
                     String serverMessage = in.readLine();
-                    if (serverMessage == null) {
-                        break;
+                    if (serverMessage.startsWith("STEP")) {
+                        steps.add(serverMessage);
                     }
-                    System.out.println("\n[Server]: " + serverMessage);
+                    else if (serverMessage.startsWith("MESSAGE")) {
+                        messages.add(serverMessage);
+                    }
+                    System.out.println("\n" + serverMessage);
                 }
             } catch (IOException e) {
                 System.out.println("\nDisconnected from server.");
@@ -46,6 +52,7 @@ public class Client {
     public void sendMessage(String message) {
         try {
             if (out != null && !clientSocket.isClosed() && !clientSocket.isOutputShutdown()) {
+                System.out.println("Sending message: " + message);
                 out.write(message + "\n");
                 out.flush();
             } else {
@@ -71,5 +78,12 @@ public class Client {
         } catch (IOException e) {
             System.err.println("Error closing resources: " + e.getMessage());
         }
+    }
+    public String getMessage() {
+        String message = messages.poll();
+        if (message != null) {
+            return message;
+        }
+        return null;
     }
 }

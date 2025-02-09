@@ -23,9 +23,9 @@ public class Lobby implements Runnable {
         if (clients.size() < 2) {
             clients.add(client);
             client.sendMessage("Waiting for another player...");
-//            if (clients.size() == 2) {
-//                startLobby();
-//            }
+            if (clients.size() == 2) {
+                startLobby();
+            }
         } else {
             throw new RuntimeException("Lobby is full.");
         }

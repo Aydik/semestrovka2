@@ -4,6 +4,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.Pane;
+import ru.itis.inf301.semestrovka2.client.Client;
+import ru.itis.inf301.semestrovka2.client.ClientService;
 import ru.itis.inf301.semestrovka2.controller.util.FXMLLoaderUtil;
 
 import java.util.function.UnaryOperator;
@@ -23,20 +25,26 @@ public class ConnectToLobbyPageController implements RootPane {
 
     @FXML
     public void back() {
+
         rootPane.getChildren().clear();
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane);
+        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane, null);
     }
 
     @FXML
     public void connect() {
         System.out.println(textField.getText());
         // условие, что не больше 1000000
-
+        int lobbyId = Integer.parseInt(textField.getText());
+        if (lobbyId <= 1000000) {
+            Client client = new Client();
+            ClientService clientService = new ClientService(Integer.toString(lobbyId));
+            rootPane.getChildren().clear();
+            FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane, clientService);
+        }
         // else вывести ошибку
 
         // создаем перейти в лобби с параметром textField.getText()
-        rootPane.getChildren().clear();
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane);
+
 
     }
 
