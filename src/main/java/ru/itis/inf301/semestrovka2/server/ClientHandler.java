@@ -1,127 +1,176 @@
 package ru.itis.inf301.semestrovka2.server;
 
+import ru.itis.inf301.semestrovka2.client.Client;
+import ru.itis.inf301.semestrovka2.client.ClientService;
+
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ClientHandler implements Runnable {
-    private final Socket socket;
-    private BufferedWriter writer;
-    private BufferedReader reader;
-    private Lobby clientLobby;
-    private String message;
+    private Socket socket;
+    private BufferedReader in;
+    private BufferedWriter out;
+    private Lobby lobby;
+    private ClientService clientService;
 
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Socket socket, ClientService clientService) {
         this.socket = socket;
+        this.clientService = clientService;
+        try {
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            System.err.println("Error setting up streams: " + e.getMessage());
+            close();
+        }
     }
+
 
     @Override
     public void run() {
         try {
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-            writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-            System.out.println("Connected to " + socket.getInetAddress());
-
-
-            connectToLobby();
-
-            if (clientLobby.getClients().size() == 2) {
-                clientLobby.startLobby();
+            String message;
+            while ((message = in.readLine()) != null) {
+                if (message.startsWith("CREATE_LOBBY") || message.startsWith("JOIN_LOBBY")) {
+                    handleLobbyCommands(message);
+                } else if (message.startsWith("MOVE")) {
+                    handleMoveCommand(message);
+                } else if (message.startsWith("VERTICAL_WALL")) {
+                    handleVerticalWallCommand(message);
+                } else if (message.startsWith("HORIZONTAL_WALL")) {
+                    handleHorizontalWallCommand(message);
+                }
             }
-
-//            while (true) {
-//                message = reader.readLine(); // Читаем строку напрямую
-//                if (message == null || message.trim().isEmpty()) {
-//                    continue;
-//                }
-//                if (message.equalsIgnoreCase("start")) {
-//                    clientLobby.startLobby();
-//                } else {
-//                    clientLobby.sendMessage("Player: " + message); // Отправка сообщения всем игрокам
-//                }
-//            }
         } catch (IOException e) {
-            System.err.println("Connection error: " + socket.getInetAddress() + " - " + e.getMessage());
+            System.out.println("Client disconnected.");
         } finally {
-//            closeResources();
+            close();
         }
     }
 
-    public void connectToLobby() throws IOException {
-        // Читаем единственную строку
-        String input = reader.readLine();
-        while (input == null || input.trim().isEmpty()) {
-            input = reader.readLine();
-        }
-        int lobbyNumber = Integer.parseInt(input);
-
-
-        CopyOnWriteArrayList<Lobby> lobbies = Server.getLobbies();
-        boolean inLobby = false;
-
-        for (Lobby lobby : lobbies) {
-            if (lobby.getId() == lobbyNumber) {
+    private void handleLobbyCommands(String message) throws IOException {
+        if (message.startsWith("CREATE_LOBBY")) {
+            int lobbyId = Integer.parseInt(message.split(" ")[1]);
+            lobby = new Lobby(lobbyId);
+            Server.addLobby(lobby);
+            lobby.addClient(this);
+            sendMessage("Lobby created with ID: " + lobbyId);
+        } else if (message.startsWith("JOIN_LOBBY")) {
+            int lobbyId = Integer.parseInt(message.split(" ")[1]);
+            lobby = Server.findLobbyById(lobbyId);
+            if (lobby != null) {
                 lobby.addClient(this);
-                sendMessage("You have joined the lobby");
-                clientLobby = lobby;
-                inLobby = true;
-                break;
+                sendMessage("Joined lobby: " + lobbyId);
+            } else {
+                sendMessage("Lobby not found.");
             }
         }
+    }
 
-        if (!inLobby) {
-            Lobby newLobby = new Lobby(lobbyNumber);
-            lobbies.add(newLobby);
-            newLobby.addClient(this);
-            sendMessage("You have joined the lobby");
-            clientLobby = newLobby;
+    private void handleMoveCommand(String message) {
+        if (clientService == null || clientService.getBoard() == null) {
+            System.err.println("ClientService or Board is not initialized!");
+            return;
+        }
+        String[] parts = message.split(" ");
+        int user = lobby.getHod();
+        int x = Integer.parseInt(parts[1]);
+        int y = Integer.parseInt(parts[2]);
+        int currentPlayer = Integer.parseInt(parts[3]);
+        if (user != currentPlayer) {
+            System.err.println("Invalid move: wrong player!");
+            sendMessage("Invalid move: wrong player!");
+            return;
+        }
+        if (clientService.getBoard().move(user, x, y)) {
+            lobby.sendMessage("MOVE " + x + " " + y + " " + user);
+            System.out.println("Processed move: MOVE " + x + " " + y + " " + user);
+        } else {
+            sendMessage("Invalid move: invalid position!");
+        }
+    }
+
+    private void handleVerticalWallCommand(String message) {
+        if (clientService == null || clientService.getBoard() == null) {
+            System.err.println("ClientService or Board is not initialized!");
+            return;
+        }
+        String[] parts = message.split(" ");
+        int user = lobby.getHod();
+        int x = Integer.parseInt(parts[1]);
+        int y = Integer.parseInt(parts[2]);
+        if (user != Integer.parseInt(parts[3])) {
+            System.err.println("Invalid wall placement: wrong player!");
+            sendMessage("Invalid wall placement: wrong player!");
+            return;
+        }
+        if (clientService.getBoard().putVerticalWall(user, x, y)) {
+            lobby.sendMessage("VERTICAL_WALL " + x + " " + y);
+            System.out.println("Processed vertical wall: VERTICAL_WALL " + x + " " + y);
+        } else {
+            sendMessage("Invalid wall placement: invalid position!");
+        }
+    }
+
+    private void handleHorizontalWallCommand(String message) {
+        if (clientService == null || clientService.getBoard() == null) {
+            System.err.println("ClientService or Board is not initialized!");
+            return;
+        }
+        String[] parts = message.split(" ");
+        int user = lobby.getHod();
+        int x = Integer.parseInt(parts[1]);
+        int y = Integer.parseInt(parts[2]);
+        if (user != Integer.parseInt(parts[3])) {
+            System.err.println("Invalid wall placement: wrong player!");
+            sendMessage("Invalid wall placement: wrong player!");
+            return;
+        }
+        if (clientService.getBoard().putHorizontalWall(user, x, y)) {
+            lobby.sendMessage("HORIZONTAL_WALL " + x + " " + y);
+            System.out.println("Processed horizontal wall: HORIZONTAL_WALL " + x + " " + y);
+        } else {
+            sendMessage("Invalid wall placement: invalid position!");
         }
     }
 
     public void sendMessage(String message) {
         try {
-            if (writer != null && !socket.isClosed() && !socket.isOutputShutdown()) {
-                writer.write(message + "\r\n");
-                writer.flush();
-            }
+            out.write(message + "\n");
+            out.flush();
         } catch (IOException e) {
-            System.err.println("Error sending message to client: " + socket.getInetAddress() + " - " + e.getMessage());
-            closeResources();
+            System.err.println("Error sending message: " + e.getMessage());
         }
     }
 
-    private void closeResources() {
+    // Метод для получения сообщения от клиента (блокирующий вызов)
+    public String getMessage() {
+
+            return this.clientService.getClient().readMessage();
+//        } catch (IOException e) {
+//            System.err.println("Error reading message in ClientHandler.getMessage(): " + e.getMessage());
+//            return null;
+//        }
+
+    }
+
+
+    public void close() {
         try {
-            if (reader != null) {
-                reader.close();
-            }
-            if (writer != null) {
-                writer.close();
-            }
-            if (socket != null && !socket.isClosed()) {
-                socket.close();
-            }
-            Server.removeClient(this);
-            if (clientLobby != null) {
-                clientLobby.removeClient(this);
-                if (clientLobby.isEmpty()) {
-                    Server.getLobbies().remove(clientLobby);
-                }
-            }
+            if (out != null) out.close();
+            if (in != null) in.close();
+            if (socket != null && !socket.isClosed()) socket.close();
         } catch (IOException e) {
-            System.err.println("Error closing resources: " + e.getMessage());
+            System.err.println("Error closing connection: " + e.getMessage());
         }
     }
 
-    public String getMessage() throws IOException {
-        long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < 5000) {  // Тайм-аут 5 секунд
-            String message = reader.readLine();
-            if (message != null && !message.trim().isEmpty()) {
-                return message;
-            }
-        }
-        return null;  // Если тайм-аут истек
+    public void setClientService(ClientService clientService) {
+        this.clientService = clientService;
+    }
+
+    public ClientService getClientService() {
+        return clientService;
     }
 }

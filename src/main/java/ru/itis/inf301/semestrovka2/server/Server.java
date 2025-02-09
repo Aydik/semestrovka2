@@ -1,16 +1,15 @@
 package ru.itis.inf301.semestrovka2.server;
 
-import lombok.Getter;
+import ru.itis.inf301.semestrovka2.client.Client;
+import ru.itis.inf301.semestrovka2.client.ClientService;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Server {
     private static final int SERVER_PORT = 50000;
-    private static final CopyOnWriteArrayList<ClientHandler> clients = new CopyOnWriteArrayList<>();
-    @Getter
     private static final CopyOnWriteArrayList<Lobby> lobbies = new CopyOnWriteArrayList<>();
 
     public static void main(String[] args) {
@@ -19,8 +18,10 @@ public class Server {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected: " + clientSocket.getInetAddress());
-                ClientHandler clientHandler = new ClientHandler(clientSocket);
-                clients.add(clientHandler);
+                Client client = new Client(clientSocket);
+                ClientService clientService = new ClientService(client);
+                // Создаем ClientHandler, передавая ему socket и clientService
+                ClientHandler clientHandler = new ClientHandler(clientSocket, clientService);
                 new Thread(clientHandler).start();
             }
         } catch (IOException e) {
@@ -28,8 +29,16 @@ public class Server {
         }
     }
 
-    public static void removeClient(ClientHandler clientHandler) {
-        clients.remove(clientHandler);
+    public static Lobby findLobbyById(int lobbyId) {
+        for (Lobby lobby : lobbies) {
+            if (lobby.getId() == lobbyId) {
+                return lobby;
+            }
+        }
+        return null;
     }
 
+    public static void addLobby(Lobby lobby) {
+        lobbies.add(lobby);
+    }
 }

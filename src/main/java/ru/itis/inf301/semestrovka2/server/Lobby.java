@@ -1,33 +1,48 @@
 package ru.itis.inf301.semestrovka2.server;
 
 import lombok.Getter;
+import ru.itis.inf301.semestrovka2.model.Board;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
 public class Lobby implements Runnable {
-    @Getter
     private final int id;
-    @Getter
     private final List<ClientHandler> clients;
     private volatile boolean started;
+    private final Board board;
 
     public Lobby(int id) {
         this.id = id;
         this.clients = new ArrayList<>();
         this.started = false;
+        this.board = new Board();
     }
 
-    public void addClient(ClientHandler client) {
+    public synchronized void addClient(ClientHandler clientHandler) {
         if (clients.size() < 2) {
-            clients.add(client);
-            client.sendMessage("Waiting for another player...");
-//            if (clients.size() == 2) {
-//                startLobby();
-//            }
+            clients.add(clientHandler);
+            clientHandler.sendMessage("Waiting for another player...");
+            if (clients.size() == 2) {
+                startLobby();
+            }
         } else {
-            throw new RuntimeException("Lobby is full.");
+            clientHandler.sendMessage("Lobby is full.");
+        }
+    }
+
+    public void startLobby() {
+        if (!started) {
+            started = true;
+            // Передаем общее игровое поле всем клиентам через их ClientService
+            for (ClientHandler ch : clients) {
+                if (ch.getClientService() != null) {
+                    ch.getClientService().setBoard(board);
+                }
+            }
+            // Запускаем игровой процесс в отдельном потоке
+            new Thread(this).start();
         }
     }
 
@@ -44,48 +59,52 @@ public class Lobby implements Runnable {
         if (started) {
             sendMessage("Game started!");
             int curClientIndex = 0;
-            String message;
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             while (!clients.isEmpty()) {
-                sendMessage("Очередь игрока " + (curClientIndex + 1));
+                curClientIndex = board.getHod();
+                sendMessage("Очередь игрока " + (curClientIndex));
                 sendMessageToCurrentPlayer(curClientIndex, "Ваш ход");
                 try {
-                    message = clients.get(curClientIndex).getMessage();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-
-                if (message == null || message.trim().isEmpty() || message.equalsIgnoreCase("exit")) {
-                    // Обработка выхода игрока
-                    clients.get(curClientIndex).sendMessage("Вы покинули игру.");
-                    removeClient(clients.get(curClientIndex));  // Убираем игрока из лобби
-                    if (clients.isEmpty()) {
-                        sendMessage("Игра завершена. Все игроки покинули лобби.");
-                        break;
+                    String message = clients.get(curClientIndex).getMessage();
+                    if (message == null || message.trim().isEmpty() || message.equalsIgnoreCase("exit")) {
+                        // Обработка выхода игрока
+                        clients.get(curClientIndex).sendMessage("Вы покинули игру.");
+                        removeClient(clients.get(curClientIndex));
+                        if (clients.isEmpty()) {
+                            sendMessage("Игра завершена. Все игроки покинули лобби.");
+                            break;
+                        } else {
+                            sendMessage("Игрок " + (curClientIndex + 1) + " покинул игру. Осталось " + clients.size() + " игроков.");
+                        }
                     } else {
-                        sendMessage("Игрок " + (curClientIndex + 1) + " покинул игру. Осталось " + clients.size() + " игроков.");
+                        sendMessage("Игрок " + (curClientIndex + 1) + ": " + message);
+                        curClientIndex = (curClientIndex + 1) % clients.size();
                     }
-                } else {
-                    sendMessage("Игрок " + (curClientIndex + 1) + ": " + message);
-                    curClientIndex = (curClientIndex + 1) % clients.size();  // Переводим очередь на следующего игрока
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
     }
 
-    public void startLobby() {
-        if (!started) {
-            started = true;
-            new Thread(this).start();
-        }
-    }
-
     public void sendMessage(String message) {
-        for (ClientHandler client : clients) {
-            client.sendMessage(message);
+        System.out.println("Sending message to " + clients.size() + " clients: " + message);
+        for (ClientHandler ch : clients) {
+            // Отправляем сообщение через ClientService объекта клиента
+            if (ch.getClientService() != null && ch.getClientService().getClient() != null) {
+                ch.getClientService().getClient().addMessage(message);
+            }
         }
     }
 
     public void sendMessageToCurrentPlayer(int playerIndex, String message) {
         clients.get(playerIndex).sendMessage(message);
+    }
+    public int getHod() {
+        return board.getHod();
     }
 }

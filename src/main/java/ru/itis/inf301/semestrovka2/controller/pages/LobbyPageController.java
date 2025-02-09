@@ -1,16 +1,19 @@
 package ru.itis.inf301.semestrovka2.controller.pages;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
+import ru.itis.inf301.semestrovka2.client.Client;
 import ru.itis.inf301.semestrovka2.client.ClientService;
 import ru.itis.inf301.semestrovka2.controller.util.FXMLLoaderUtil;
 
+import java.util.Optional;
 import java.util.Random;
 
 public class LobbyPageController implements RootPane {
-    ClientService clientService;
-
+    private ClientService clientService;
+    private Client client;
     @FXML
     public Pane rootPane;
     @FXML
@@ -20,15 +23,65 @@ public class LobbyPageController implements RootPane {
     public void initialize() {
         Random random = new Random();
         String lobby_id = Integer.toString(random.nextInt(1000000));
-        lobbyId.setText(lobby_id);
-        clientService = new ClientService(lobby_id);
+        System.out.println(lobby_id);
+        waitForLobby(lobby_id);
     }
 
     @FXML
     public void back() {
-        clientService.disconnect();
+        if (clientService != null) {
+            clientService.disconnect();
+        }
         rootPane.getChildren().clear();
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane);
+        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane, Optional.empty());
+    }
+
+    public void waitForLobby(String lobby_id) {
+        lobbyId.setText(lobby_id);
+        client = new Client();
+        clientService = new ClientService(client);
+        clientService.connect(lobby_id, true);  // создаем лобби
+        // Запускаем поток чтения сообщений, чтобы сообщения из сокета попадали в очередь
+        client.startReadingMessages();
+        System.out.println("ClientService: " + clientService);
+        if (client.getClientSocket() == null) {
+            System.err.println("Failed to connect to the server.");
+            return;
+        }
+        new Thread(() -> {
+            try {
+                long startTime = System.currentTimeMillis();
+                while (System.currentTimeMillis() - startTime < 60000) { // 60 секунд ожидания
+                    String response = client.readMessage();  // читаем сообщение из очереди
+                    if (response == null) {
+                        // Добавим небольшую задержку, чтобы не загружать CPU
+
+
+                        Thread.sleep(100);
+                        continue;
+                    }
+                    System.out.println("Processing message: '" + response + "'");
+
+                    if (response.trim().equals("Game started!")) {
+                        System.out.println("Received GAME_START message");
+                        Platform.runLater(() -> {
+                            System.out.println("Switching to game screen...");
+                            rootPane.getChildren().clear(); // Очистка текущего экрана
+                            FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane, Optional.of(clientService));
+                        });
+                        return; // Завершаем поток после перехода на экран игры
+                    }
+                    continue;
+                }
+                Platform.runLater(() -> {
+                    System.out.println("Timeout expired, returning to main menu...");
+                    rootPane.getChildren().clear();
+                    FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane, Optional.empty());
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
 

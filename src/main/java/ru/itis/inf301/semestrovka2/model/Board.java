@@ -17,14 +17,14 @@ public class Board {
     private int user1_y;
     private int[][] vertical = new int[9][8];
     private int[][] horizontal = new int[8][9];
+    @Getter
     private int hod;
 
-
     public Board() {
-        user0_y = 0;
-        user0_x = 4;
-        user1_y = 8;
-        user1_x = 4;
+        user0_x = 8;
+        user0_y = 4;
+        user1_x = 0;
+        user1_y = 4;
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 8; j++) {
                 vertical[i][j] = 0;
@@ -58,20 +58,13 @@ public class Board {
 
     public boolean move(int user, int x, int y) {
         if (hod != user) return false;
-        int user_x;
-        int user_y;
-        int opponent_x;
-        int opponent_y;
+        int user_x, user_y, opponent_x, opponent_y;
         if (user == 0) {
-            user_x = user0_x;
-            user_y = user0_y;
-            opponent_x = user1_x;
-            opponent_y = user1_y;
+            user_x = user0_x; user_y = user0_y;
+            opponent_x = user1_x; opponent_y = user1_y;
         } else {
-            user_x = user1_x;
-            user_y = user1_y;
-            opponent_x = user0_x;
-            opponent_y = user0_y;
+            user_x = user1_x; user_y = user1_y;
+            opponent_x = user0_x; opponent_y = user0_y;
         }
         int delta = abs(user_x - x) + abs(user_y - y);
         if (delta == 1) {
@@ -124,7 +117,8 @@ public class Board {
         return false;
     }
 
-    public boolean putHorizontalWall(int x, int y) {
+    public boolean putHorizontalWall(int user, int x, int y) {
+        if (hod != user) return false;
         if (horizontal[x][y] == 0) {
             horizontal[x][y] = 1;
             hod = (hod + 1) % 2;
@@ -133,7 +127,8 @@ public class Board {
         return false;
     }
 
-    public boolean putVerticalWall(int x, int y) {
+    public boolean putVerticalWall(int user, int x, int y) {
+        if (hod != user) return false;
         if (vertical[x][y] == 0) {
             vertical[x][y] = 1;
             hod = (hod + 1) % 2;
