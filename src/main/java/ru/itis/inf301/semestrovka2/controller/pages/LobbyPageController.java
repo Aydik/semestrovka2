@@ -8,10 +8,11 @@ import ru.itis.inf301.semestrovka2.client.Client;
 import ru.itis.inf301.semestrovka2.client.ClientService;
 import ru.itis.inf301.semestrovka2.controller.util.FXMLLoaderUtil;
 
-import java.util.Random;
+import static java.lang.Thread.sleep;
+
 
 public class LobbyPageController implements RootPane {
-    ClientService clientService;
+    private ClientService clientService;
 
     @FXML
     public Pane rootPane;
@@ -20,24 +21,24 @@ public class LobbyPageController implements RootPane {
     public Text lobbyId;
 
     @FXML
-    public void initialize() throws InterruptedException {
-        Random random = new Random();
-        String lobby_id = Integer.toString(random.nextInt(1000000));
-        wait(lobby_id);
+    public void initialize() { }
+
+    public void setClientService(ClientService clientService) {
+        this.clientService = clientService;
+        lobbyId.setText(Integer.toString(clientService.getLobby_id()));
+        waitConnection();
     }
 
     @FXML
     public void back() {
         clientService.disconnect();
         rootPane.getChildren().clear();
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane, null);
+        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane);
     }
 
-    public void wait(String lobby_id) throws InterruptedException {
-        lobbyId.setText(lobby_id);
-        clientService = new ClientService(lobby_id);
-        Client client = clientService.getClient();
 
+    public void waitConnection() {
+        Client client = clientService.getClient();
         new Thread(() -> {
             String message;
 
@@ -48,21 +49,23 @@ public class LobbyPageController implements RootPane {
                     try {
                         Thread.sleep(500);
                     } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                        System.out.println(e);
                     }
                     continue;
                 }
                 message = message.replace("MESSAGE ", "");
-                System.out.println("proccesing " + message);
+                if (message.startsWith("You have joined the lobby")) {
+                    clientService.setClient_index(Integer.parseInt(message.split(" ")[-1]));
+                }
                 if (message.trim().equals("Game started!")) {
                     System.out.println("Received started!");
+                    System.out.println(clientService.getLobby_id());
                     Platform.runLater(() -> {
                         rootPane.getChildren().clear();
                         FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane, clientService);
                     });
 
                 }
-                continue;
             }
 
         }).start();

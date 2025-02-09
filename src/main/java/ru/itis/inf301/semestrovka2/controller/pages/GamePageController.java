@@ -17,7 +17,7 @@ import ru.itis.inf301.semestrovka2.model.Board;
 @Getter @Setter
 public class GamePageController implements RootPane {
     private Board board;
-    ClientService clientService;
+    private ClientService clientService;
 
     @FXML
     public Pane rootPane;
@@ -34,9 +34,10 @@ public class GamePageController implements RootPane {
         renderBoard();
     }
 
+
     public void renderBoard() {
         gridPane.getChildren().clear();
-        textHod.setText("Ходит user" + board.getHod());
+        textHod.setText("Ходит user" + board.getStep());
         for (int row = 0; row < 17; row++) {
             for (int col = 0; col < 17; col++) {
                 Rectangle rect;
@@ -92,9 +93,8 @@ public class GamePageController implements RootPane {
     }
 
     public void move(int finalRow, int finalCol) {
-        // board.getHod() заменить на user
         System.out.println("cell " + finalRow + " " + finalCol);
-        if(board.move(board.getHod(), finalRow, finalCol)){
+        if(board.move(clientService.getClient_index(), finalRow, finalCol)){
             // закинуть на сервак этот ход
             if(board.checkResult() != -1 ){
                 redirectToWinPage(board.checkResult());
@@ -104,7 +104,7 @@ public class GamePageController implements RootPane {
 
     public void putVerticalWall(int finalRow, int finalCol) {
         System.out.println("vertical wall " + finalRow + " " + finalCol);
-        if(board.putVerticalWall(board.getHod(), finalRow, finalCol)){
+        if(board.putVerticalWall(board.getStep(), finalRow, finalCol)){
             if(board.checkResult() != -1 ){
                 redirectToWinPage(board.checkResult());
             } else renderBoard();
@@ -113,7 +113,7 @@ public class GamePageController implements RootPane {
 
     public void putHorizontalWall(int finalRow, int finalCol) {
         System.out.println("horizontal wall " + finalRow + " " + finalCol);
-        if(board.putHorizontalWall(board.getHod(), finalRow, finalCol)){
+        if(board.putHorizontalWall(board.getStep(), finalRow, finalCol)){
             if(board.checkResult() != -1 ){
                 redirectToWinPage(board.checkResult());
             } else renderBoard();

@@ -17,7 +17,7 @@ public class Board {
     private int user1_y;
     private int[][] vertical = new int[9][8];
     private int[][] horizontal = new int[8][9];
-    private int hod;
+    private int step;
 
 
     public Board() {
@@ -36,7 +36,7 @@ public class Board {
             }
         }
         Random random = new Random();
-        hod = random.nextInt(2);
+        step = random.nextInt(2);
     }
 
     public int checkResult() {
@@ -53,11 +53,11 @@ public class Board {
             user1_x = x;
             user1_y = y;
         }
-        hod = (hod + 1) % 2;
+        step = (step + 1) % 2;
     }
 
     public boolean move(int user, int x, int y) {
-        if (hod != user) return false;
+        if (step != user) return false;
         int user_x;
         int user_y;
         int opponent_x;
@@ -125,20 +125,20 @@ public class Board {
     }
 
     public boolean putHorizontalWall(int user, int x, int y) {
-        if (hod != user) return false;
+        if (step != user) return false;
         if (horizontal[x][y] == 0) {
             horizontal[x][y] = 1;
-            hod = (hod + 1) % 2;
+            step = (step + 1) % 2;
             return true;
         }
         return false;
     }
 
     public boolean putVerticalWall(int user, int x, int y) {
-        if (hod != user) return false;
+        if (step != user) return false;
         if (vertical[x][y] == 0) {
             vertical[x][y] = 1;
-            hod = (hod + 1) % 2;
+            step = (step + 1) % 2;
             return true;
         }
         return false;

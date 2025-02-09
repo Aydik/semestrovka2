@@ -12,6 +12,7 @@ public class Client {
     private BufferedReader in;
     private ConcurrentLinkedQueue<String> messages = new ConcurrentLinkedQueue<>();
     private ConcurrentLinkedQueue<String> steps = new ConcurrentLinkedQueue<>();
+    private int client_index;
 
     public void connect() {
         try {
@@ -31,16 +32,20 @@ public class Client {
             try {
                 while (true) {
                     String serverMessage = in.readLine();
-                    if (serverMessage.startsWith("STEP")) {
-                        steps.add(serverMessage);
+                    if (serverMessage != null) {
+                        if (serverMessage.startsWith("STEP")) {
+                            steps.add(serverMessage);
+                        } else if (serverMessage.startsWith("MESSAGE")) {
+                            messages.add(serverMessage);
+                        }
+                        System.out.println("\n" + serverMessage);
                     }
-                    else if (serverMessage.startsWith("MESSAGE")) {
-                        messages.add(serverMessage);
-                    }
-                    System.out.println("\n" + serverMessage);
+                    Thread.sleep(500);
                 }
             } catch (IOException e) {
                 System.out.println("\nDisconnected from server.");
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             } finally {
                 closeResources();
             }
@@ -79,11 +84,8 @@ public class Client {
             System.err.println("Error closing resources: " + e.getMessage());
         }
     }
+
     public String getMessage() {
-        String message = messages.poll();
-        if (message != null) {
-            return message;
-        }
-        return null;
+        return messages.poll();
     }
 }

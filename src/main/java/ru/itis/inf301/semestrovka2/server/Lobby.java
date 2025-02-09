@@ -1,6 +1,7 @@
 package ru.itis.inf301.semestrovka2.server;
 
 import lombok.Getter;
+import ru.itis.inf301.semestrovka2.model.Board;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ public class Lobby implements Runnable {
     @Getter
     private final List<ClientHandler> clients;
     private volatile boolean started;
+    private Board board;
 
     public Lobby(int id) {
         this.id = id;
@@ -41,13 +43,13 @@ public class Lobby implements Runnable {
 
     @Override
     public void run() {
+        board = new Board();
         if (started) {
             sendMessage("Game started!");
-            int curClientIndex = 0;
+            int curClientIndex = board.getStep();
             String message;
-            while (!clients.isEmpty()) {
+            while (clients.size() == 2) {
                 sendMessage("Очередь игрока " + (curClientIndex + 1));
-                sendMessageToCurrentPlayer(curClientIndex, "Ваш ход");
                 try {
                     message = clients.get(curClientIndex).getMessage();
                 } catch (IOException e) {

@@ -11,7 +11,7 @@ public class AppStartController implements RootPane {
 
     @FXML
     public void initialize() {
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane, null);
+        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane);
     }
 
 

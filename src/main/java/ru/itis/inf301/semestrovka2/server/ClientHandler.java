@@ -10,7 +10,6 @@ public class ClientHandler implements Runnable {
     private BufferedWriter writer;
     private BufferedReader reader;
     private Lobby clientLobby;
-    private String message;
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
@@ -30,21 +29,10 @@ public class ClientHandler implements Runnable {
                 clientLobby.startLobby();
             }
 
-//            while (true) {
-//                message = reader.readLine(); // Читаем строку напрямую
-//                if (message == null || message.trim().isEmpty()) {
-//                    continue;
-//                }
-//                if (message.equalsIgnoreCase("start")) {
-//                    clientLobby.startLobby();
-//                } else {
-//                    clientLobby.sendMessage("Player: " + message); // Отправка сообщения всем игрокам
-//                }
-//            }
         } catch (IOException e) {
             System.err.println("Connection error: " + socket.getInetAddress() + " - " + e.getMessage());
         } finally {
-//            closeResources();
+            closeResources();
         }
     }
 
@@ -63,7 +51,7 @@ public class ClientHandler implements Runnable {
         for (Lobby lobby : lobbies) {
             if (lobby.getId() == lobbyNumber) {
                 lobby.addClient(this);
-                sendMessage("You have joined the lobby");
+                sendMessage("You have joined the lobby: " + lobbyNumber + ". Your index = " + 1);
                 clientLobby = lobby;
                 inLobby = true;
                 break;
@@ -74,7 +62,7 @@ public class ClientHandler implements Runnable {
             Lobby newLobby = new Lobby(lobbyNumber);
             lobbies.add(newLobby);
             newLobby.addClient(this);
-            sendMessage("You have joined the lobby");
+            sendMessage("You have joined the lobby: " + lobbyNumber + ". Your index = " + 0);
             clientLobby = newLobby;
         }
     }

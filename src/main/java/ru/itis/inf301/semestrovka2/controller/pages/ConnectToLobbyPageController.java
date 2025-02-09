@@ -27,19 +27,17 @@ public class ConnectToLobbyPageController implements RootPane {
     public void back() {
 
         rootPane.getChildren().clear();
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane, null);
+        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane);
     }
 
     @FXML
     public void connect() {
-        System.out.println(textField.getText());
-        // условие, что не больше 1000000
-        int lobbyId = Integer.parseInt(textField.getText());
-        if (lobbyId <= 1000000) {
-            Client client = new Client();
-            ClientService clientService = new ClientService(Integer.toString(lobbyId));
+
+        String lobbyId = textField.getText();
+        if (Integer.parseInt(lobbyId) <= 1000000) {
+            ClientService clientService = new ClientService(lobbyId);
             rootPane.getChildren().clear();
-            FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane, clientService);
+            FXMLLoaderUtil.loadFXMLToPane("/view/templates/lobby.fxml", rootPane, clientService);
         }
         // else вывести ошибку
 
