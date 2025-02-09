@@ -1,9 +1,12 @@
 package ru.itis.inf301.semestrovka2.client;
 
+import lombok.Getter;
+import lombok.Setter;
+import ru.itis.inf301.semestrovka2.model.Board;
+
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Scanner;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Client {
@@ -12,7 +15,10 @@ public class Client {
     private BufferedReader in;
     private ConcurrentLinkedQueue<String> messages = new ConcurrentLinkedQueue<>();
     private ConcurrentLinkedQueue<String> steps = new ConcurrentLinkedQueue<>();
+    @Getter @Setter
     private int client_index;
+    @Getter @Setter
+    private Board board;
 
     public void connect() {
         try {
@@ -87,5 +93,49 @@ public class Client {
 
     public String getMessage() {
         return messages.poll();
+    }
+
+    public String getStep() {
+        return steps.poll();
+    }
+
+    public void updateBoard() {
+        new Thread(() -> {
+            String message;
+            while (true) {
+                String step = getStep();
+
+                if (step == null) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        System.out.println(e);
+                    }
+                    continue;
+                }
+
+                step = step.replace("STEP ", "");
+                board = new Board(step);
+            }
+
+        }).start();
+    }
+
+    public void move(int finalRow, int finalCol) {
+        if (board.move(client_index, finalRow, finalCol)) {
+            sendMessage("STEP " + board);
+        }
+    }
+
+    public void putVerticalWall(int finalRow, int finalCol) {
+        if (board.putVerticalWall(client_index, finalRow, finalCol)) {
+            sendMessage("STEP " + board);
+        }
+    }
+
+    public void putHorizontalWall(int finalRow, int finalCol) {
+        if (board.putHorizontalWall(client_index, finalRow, finalCol)) {
+            sendMessage("STEP " + board);
+        }
     }
 }

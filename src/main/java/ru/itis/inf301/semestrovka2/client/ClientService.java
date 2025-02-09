@@ -1,23 +1,14 @@
 package ru.itis.inf301.semestrovka2.client;
 
-import javafx.application.Platform;
 import lombok.Getter;
 import lombok.Setter;
-import ru.itis.inf301.semestrovka2.controller.util.FXMLLoaderUtil;
-import ru.itis.inf301.semestrovka2.model.Board;
 
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
-import static java.lang.Thread.sleep;
 
 @Getter @Setter
 public class ClientService {
     private final Client client;
     private final int lobby_id;
-    private int client_index;
-    private Board board;
 
     public ClientService() {
         Random random = new Random();

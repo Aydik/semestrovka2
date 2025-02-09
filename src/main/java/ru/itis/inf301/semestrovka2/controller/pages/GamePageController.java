@@ -1,5 +1,6 @@
 package ru.itis.inf301.semestrovka2.controller.pages;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
@@ -11,12 +12,14 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import lombok.Getter;
 import lombok.Setter;
+import ru.itis.inf301.semestrovka2.client.Client;
 import ru.itis.inf301.semestrovka2.client.ClientService;
 import ru.itis.inf301.semestrovka2.controller.util.FXMLLoaderUtil;
 import ru.itis.inf301.semestrovka2.model.Board;
-@Getter @Setter
+
+@Getter
+@Setter
 public class GamePageController implements RootPane {
-    private Board board;
     private ClientService clientService;
 
     @FXML
@@ -30,13 +33,13 @@ public class GamePageController implements RootPane {
 
     @FXML
     public void initialize() {
-        board = new Board();
         renderBoard();
     }
 
 
     public void renderBoard() {
         gridPane.getChildren().clear();
+        Board board = clientService.getClient().getBoard();
         textHod.setText("Ходит user" + board.getStep());
         for (int row = 0; row < 17; row++) {
             for (int col = 0; col < 17; col++) {
@@ -44,11 +47,10 @@ public class GamePageController implements RootPane {
                 Circle circle = null;
                 if (row % 2 == 1 && col % 2 == 1) {
                     rect = new Rectangle(10, 10, Color.valueOf("#FAE7B5"));
-                }
-                else if (row % 2 == 1){
+                } else if (row % 2 == 1) {
                     int finalRow = row / 2;
                     int finalCol = col / 2;
-                    if (board.getHorizontal()[finalRow][finalCol] == 1){
+                    if (board.getHorizontal()[finalRow][finalCol] == 1) {
                         rect = new Rectangle(60, 10, Color.valueOf("#79553D"));
                     } else {
                         rect = new Rectangle(60, 10, Color.valueOf("#FAE7B5"));
@@ -56,11 +58,10 @@ public class GamePageController implements RootPane {
                     rect.setOnMouseClicked(event -> {
                         putHorizontalWall(finalRow, finalCol);
                     });
-                }
-                else if (col % 2 == 1){
+                } else if (col % 2 == 1) {
                     int finalRow = row / 2;
                     int finalCol = col / 2;
-                    if (board.getVertical()[finalRow][finalCol] == 1){
+                    if (board.getVertical()[finalRow][finalCol] == 1) {
                         rect = new Rectangle(10, 60, Color.valueOf("#79553D"));
                     } else {
                         rect = new Rectangle(10, 60, Color.valueOf("#FAE7B5"));
@@ -68,14 +69,13 @@ public class GamePageController implements RootPane {
                     rect.setOnMouseClicked(event -> {
                         putVerticalWall(finalRow, finalCol);
                     });
-                }
-                else {
+                } else {
                     int finalRow = row / 2;
                     int finalCol = col / 2;
                     rect = new Rectangle(60, 60, Color.valueOf("#FFCA86"));
-                    if (board.getUser0_x() == finalRow && board.getUser0_y() == finalCol){
+                    if (board.getUser0_x() == finalRow && board.getUser0_y() == finalCol) {
                         circle = new Circle(30, 30, 25, Color.valueOf("#007FFF"));
-                    } else if (board.getUser1_x() == finalRow && board.getUser1_y() == finalCol){
+                    } else if (board.getUser1_x() == finalRow && board.getUser1_y() == finalCol) {
                         circle = new Circle(30, 30, 25, Color.valueOf("#C41E3A"));
                     }
                     rect.setOnMouseClicked(event -> {
@@ -83,7 +83,7 @@ public class GamePageController implements RootPane {
                     });
                 }
                 gridPane.add(rect, col, row);
-                if(circle != null) {
+                if (circle != null) {
                     gridPane.add(circle, col, row);
                     GridPane.setHalignment(circle, HPos.CENTER);
                     GridPane.setValignment(circle, VPos.CENTER);
@@ -93,45 +93,41 @@ public class GamePageController implements RootPane {
     }
 
     public void move(int finalRow, int finalCol) {
-        System.out.println("cell " + finalRow + " " + finalCol);
-        if(board.move(clientService.getClient_index(), finalRow, finalCol)){
-            // закинуть на сервак этот ход
-            if(board.checkResult() != -1 ){
-                redirectToWinPage(board.checkResult());
-            } else renderBoard();
-        }
+        Client client = clientService.getClient();
+        client.move(finalRow, finalCol);
     }
 
     public void putVerticalWall(int finalRow, int finalCol) {
-        System.out.println("vertical wall " + finalRow + " " + finalCol);
-        if(board.putVerticalWall(board.getStep(), finalRow, finalCol)){
-            if(board.checkResult() != -1 ){
-                redirectToWinPage(board.checkResult());
-            } else renderBoard();
-        }
+        Client client = clientService.getClient();
+        client.putVerticalWall(finalRow, finalCol);
     }
 
     public void putHorizontalWall(int finalRow, int finalCol) {
-        System.out.println("horizontal wall " + finalRow + " " + finalCol);
-        if(board.putHorizontalWall(board.getStep(), finalRow, finalCol)){
-            if(board.checkResult() != -1 ){
-                redirectToWinPage(board.checkResult());
-            } else renderBoard();
-        }
+        Client client = clientService.getClient();
+        client.putHorizontalWall(finalRow, finalCol);
     }
 
-    public void redirectToWinPage(int result){
+    public void startGame() {
+        Client client = clientService.getClient();
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    System.out.println(e);
+                }
+
+                renderBoard();
+            }
+
+        }).start();
+    }
+
+    public void redirectToWinPage(int result) {
         System.out.println(result);
         rootPane.getChildren().clear();
         FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane, clientService);
     }
-
-    /* создать метод вызывающий ожидание хода соперника
-        обновляет board
-        if(board.checkResult() != -1 ){
-                    redirectToWinPage(board.checkResult());
-                } else renderBoard();
-    */
 
 
     @Override

@@ -21,7 +21,8 @@ public class LobbyPageController implements RootPane {
     public Text lobbyId;
 
     @FXML
-    public void initialize() { }
+    public void initialize() {
+    }
 
     public void setClientService(ClientService clientService) {
         this.clientService = clientService;
@@ -55,7 +56,8 @@ public class LobbyPageController implements RootPane {
                 }
                 message = message.replace("MESSAGE ", "");
                 if (message.startsWith("You have joined the lobby")) {
-                    clientService.setClient_index(Integer.parseInt(message.split(" ")[-1]));
+                    String[] messageArr = message.split(" ");
+                    client.setClient_index(Integer.parseInt(messageArr[messageArr.length - 1]));
                 }
                 if (message.trim().equals("Game started!")) {
                     System.out.println("Received started!");

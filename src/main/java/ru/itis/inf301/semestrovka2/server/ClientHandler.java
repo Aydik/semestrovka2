@@ -48,7 +48,9 @@ public class ClientHandler implements Runnable {
         CopyOnWriteArrayList<Lobby> lobbies = Server.getLobbies();
         boolean inLobby = false;
 
+        System.out.println(0 + " " + lobbies.size());
         for (Lobby lobby : lobbies) {
+            System.out.println(lobby.getId() + " " + lobby.getClients().size());
             if (lobby.getId() == lobbyNumber) {
                 lobby.addClient(this);
                 sendMessage("You have joined the lobby: " + lobbyNumber + ". Your index = " + 1);
@@ -56,6 +58,7 @@ public class ClientHandler implements Runnable {
                 inLobby = true;
                 break;
             }
+            System.out.println(2);
         }
 
         if (!inLobby) {
@@ -64,6 +67,7 @@ public class ClientHandler implements Runnable {
             newLobby.addClient(this);
             sendMessage("You have joined the lobby: " + lobbyNumber + ". Your index = " + 0);
             clientLobby = newLobby;
+            System.out.println(3);
         }
     }
 
@@ -71,6 +75,18 @@ public class ClientHandler implements Runnable {
         try {
             if (writer != null && !socket.isClosed() && !socket.isOutputShutdown()) {
                 writer.write("MESSAGE " + message + "\r\n");
+                writer.flush();
+            }
+        } catch (IOException e) {
+            System.err.println("Error sending message to client: " + socket.getInetAddress() + " - " + e.getMessage());
+            closeResources();
+        }
+    }
+
+    public void sendStep(String step) {
+        try {
+            if (writer != null && !socket.isClosed() && !socket.isOutputShutdown()) {
+                writer.write("STEP " + step + "\r\n");
                 writer.flush();
             }
         } catch (IOException e) {
@@ -104,7 +120,7 @@ public class ClientHandler implements Runnable {
 
     public String getMessage() throws IOException {
         long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < 5000) {  // Тайм-аут 5 секунд
+        while (System.currentTimeMillis() - startTime < 500) {  // Тайм-аут 5 секунд
             String message = reader.readLine();
             if (message != null && !message.trim().isEmpty()) {
                 return message;
