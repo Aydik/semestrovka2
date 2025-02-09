@@ -21,10 +21,10 @@ public class Board {
 
 
     public Board() {
-        user0_y = 0;
-        user0_x = 4;
-        user1_y = 8;
-        user1_x = 4;
+        user0_x = 8;
+        user0_y = 4;
+        user1_x = 0;
+        user1_y = 4;
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 8; j++) {
                 vertical[i][j] = 0;
@@ -124,7 +124,8 @@ public class Board {
         return false;
     }
 
-    public boolean putHorizontalWall(int x, int y) {
+    public boolean putHorizontalWall(int user, int x, int y) {
+        if (hod != user) return false;
         if (horizontal[x][y] == 0) {
             horizontal[x][y] = 1;
             hod = (hod + 1) % 2;
@@ -133,7 +134,8 @@ public class Board {
         return false;
     }
 
-    public boolean putVerticalWall(int x, int y) {
+    public boolean putVerticalWall(int user, int x, int y) {
+        if (hod != user) return false;
         if (vertical[x][y] == 0) {
             vertical[x][y] = 1;
             hod = (hod + 1) % 2;

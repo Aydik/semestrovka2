@@ -82,7 +82,7 @@ public class ClientHandler implements Runnable {
     public void sendMessage(String message) {
         try {
             if (writer != null && !socket.isClosed() && !socket.isOutputShutdown()) {
-                writer.write(message + "\r\n");
+                writer.write("MESSAGE " + message + "\r\n");
                 writer.flush();
             }
         } catch (IOException e) {

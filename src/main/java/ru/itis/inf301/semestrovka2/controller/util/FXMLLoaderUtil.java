@@ -6,13 +6,15 @@ import javafx.scene.layout.Pane;
 
 import java.io.IOException;
 
+import ru.itis.inf301.semestrovka2.client.ClientService;
+import ru.itis.inf301.semestrovka2.controller.pages.GamePageController;
 import ru.itis.inf301.semestrovka2.controller.pages.RootPane;
 
 /**
  * Вспомогательный класс для управления навигацией и передачи контроллерам корневого узла приложения*/
 public class FXMLLoaderUtil {
 
-    public static void loadFXMLToPane(String fxmlPath, Pane rootPane) {
+    public static void loadFXMLToPane(String fxmlPath, Pane rootPane, ClientService clientService) {
 
         try {
 
@@ -23,6 +25,9 @@ public class FXMLLoaderUtil {
             Object controller = fxmlLoader.getController();
             if (controller instanceof RootPane rootPaneAwareController) {
                 rootPaneAwareController.setRootPane(rootPane);
+            }
+            if (controller instanceof GamePageController gamePageController) {
+                gamePageController.setClientService(clientService);
             }
             rootPane.getChildren().add(scene);
 
