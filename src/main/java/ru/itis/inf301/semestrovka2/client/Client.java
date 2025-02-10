@@ -28,6 +28,10 @@ public class Client {
             System.out.println("Connected to server");
 
             startReadingMessages();
+
+            board = new Board();
+            updateBoard();
+
         } catch (IOException e) {
             System.err.println("Connection error: " + e.getMessage());
         }
@@ -41,10 +45,10 @@ public class Client {
                     if (serverMessage != null) {
                         if (serverMessage.startsWith("STEP")) {
                             steps.add(serverMessage);
+                            System.out.println("\n" + serverMessage);
                         } else if (serverMessage.startsWith("MESSAGE")) {
                             messages.add(serverMessage);
                         }
-                        System.out.println("\n" + serverMessage);
                     }
                     Thread.sleep(500);
                 }
@@ -101,9 +105,9 @@ public class Client {
 
     public void updateBoard() {
         new Thread(() -> {
-            String message;
+            String step;
             while (true) {
-                String step = getStep();
+                step = getStep();
 
                 if (step == null) {
                     try {

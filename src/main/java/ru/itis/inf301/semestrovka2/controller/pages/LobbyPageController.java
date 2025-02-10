@@ -20,10 +20,6 @@ public class LobbyPageController implements RootPane {
     @FXML
     public Text lobbyId;
 
-    @FXML
-    public void initialize() {
-    }
-
     public void setClientService(ClientService clientService) {
         this.clientService = clientService;
         lobbyId.setText(Integer.toString(clientService.getLobby_id()));
@@ -61,7 +57,6 @@ public class LobbyPageController implements RootPane {
                 }
                 if (message.trim().equals("Game started!")) {
                     System.out.println("Received started!");
-                    System.out.println(clientService.getLobby_id());
                     Platform.runLater(() -> {
                         rootPane.getChildren().clear();
                         FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane, clientService);

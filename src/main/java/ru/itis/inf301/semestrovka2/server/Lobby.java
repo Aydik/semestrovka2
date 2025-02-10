@@ -75,6 +75,7 @@ public class Lobby implements Runnable {
                     }
                 }
             }
+            closeLobby();
         }
     }
 
@@ -93,5 +94,9 @@ public class Lobby implements Runnable {
 
     public void sendStepToCurrentPlayer(int playerIndex, String step) {
         clients.get(playerIndex).sendStep(step);
+    }
+
+    public void closeLobby() {
+        Server.removeLobby(this);
     }
 }

@@ -46,7 +46,7 @@ public class FXMLLoaderUtil {
             Object controller = fxmlLoader.getController();
             if (controller instanceof RootPane rootPaneAwareController) {
                 rootPaneAwareController.setRootPane(rootPane);
-            }
+                        }
             if (controller instanceof GamePageController gamePageController) {
                 gamePageController.setClientService(clientService);
             }
@@ -54,7 +54,6 @@ public class FXMLLoaderUtil {
                 lobbyPageController.setClientService(clientService);
             }
             rootPane.getChildren().add(scene);
-
         } catch (IOException e ) {
             throw new RuntimeException("Failed to load FXML: " + fxmlPath, e);
         }

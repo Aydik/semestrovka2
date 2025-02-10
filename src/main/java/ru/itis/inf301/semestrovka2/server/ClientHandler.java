@@ -31,8 +31,6 @@ public class ClientHandler implements Runnable {
 
         } catch (IOException e) {
             System.err.println("Connection error: " + socket.getInetAddress() + " - " + e.getMessage());
-        } finally {
-            closeResources();
         }
     }
 
@@ -48,9 +46,7 @@ public class ClientHandler implements Runnable {
         CopyOnWriteArrayList<Lobby> lobbies = Server.getLobbies();
         boolean inLobby = false;
 
-        System.out.println(0 + " " + lobbies.size());
         for (Lobby lobby : lobbies) {
-            System.out.println(lobby.getId() + " " + lobby.getClients().size());
             if (lobby.getId() == lobbyNumber) {
                 lobby.addClient(this);
                 sendMessage("You have joined the lobby: " + lobbyNumber + ". Your index = " + 1);
@@ -58,16 +54,14 @@ public class ClientHandler implements Runnable {
                 inLobby = true;
                 break;
             }
-            System.out.println(2);
         }
 
         if (!inLobby) {
             Lobby newLobby = new Lobby(lobbyNumber);
-            lobbies.add(newLobby);
+            Server.addLobby(newLobby);
             newLobby.addClient(this);
             sendMessage("You have joined the lobby: " + lobbyNumber + ". Your index = " + 0);
             clientLobby = newLobby;
-            System.out.println(3);
         }
     }
 
@@ -108,10 +102,7 @@ public class ClientHandler implements Runnable {
             }
             Server.removeClient(this);
             if (clientLobby != null) {
-                clientLobby.removeClient(this);
-                if (clientLobby.isEmpty()) {
-                    Server.getLobbies().remove(clientLobby);
-                }
+                clientLobby.closeLobby();
             }
         } catch (IOException e) {
             System.err.println("Error closing resources: " + e.getMessage());

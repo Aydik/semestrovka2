@@ -20,7 +20,7 @@ public class Server {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected: " + clientSocket.getInetAddress());
                 ClientHandler clientHandler = new ClientHandler(clientSocket);
-                clients.add(clientHandler);
+                addClient(clientHandler);
                 new Thread(clientHandler).start();
             }
         } catch (IOException e) {
@@ -28,8 +28,15 @@ public class Server {
         }
     }
 
+    public static void addClient(ClientHandler clientHandler) {
+        clients.add(clientHandler);
+    }
+
     public static void removeClient(ClientHandler clientHandler) {
         clients.remove(clientHandler);
     }
 
+    public static void addLobby(Lobby lobby) { lobbies.add(lobby); }
+
+    public static void removeLobby(Lobby lobby) { lobbies.remove(lobby); }
 }
