@@ -31,8 +31,6 @@ public class ClientHandler implements Runnable {
 
         } catch (IOException e) {
             System.err.println("Connection error: " + socket.getInetAddress() + " - " + e.getMessage());
-        } finally {
-            closeResources();
         }
     }
 
@@ -60,7 +58,7 @@ public class ClientHandler implements Runnable {
 
         if (!inLobby) {
             Lobby newLobby = new Lobby(lobbyNumber);
-            lobbies.add(newLobby);
+            Server.addLobby(newLobby);
             newLobby.addClient(this);
             sendMessage("You have joined the lobby: " + lobbyNumber + ". Your index = " + 0);
             clientLobby = newLobby;
@@ -71,6 +69,18 @@ public class ClientHandler implements Runnable {
         try {
             if (writer != null && !socket.isClosed() && !socket.isOutputShutdown()) {
                 writer.write("MESSAGE " + message + "\r\n");
+                writer.flush();
+            }
+        } catch (IOException e) {
+            System.err.println("Error sending message to client: " + socket.getInetAddress() + " - " + e.getMessage());
+            closeResources();
+        }
+    }
+
+    public void sendStep(String step) {
+        try {
+            if (writer != null && !socket.isClosed() && !socket.isOutputShutdown()) {
+                writer.write("STEP " + step + "\r\n");
                 writer.flush();
             }
         } catch (IOException e) {
@@ -92,10 +102,7 @@ public class ClientHandler implements Runnable {
             }
             Server.removeClient(this);
             if (clientLobby != null) {
-                clientLobby.removeClient(this);
-                if (clientLobby.isEmpty()) {
-                    Server.getLobbies().remove(clientLobby);
-                }
+                clientLobby.closeLobby();
             }
         } catch (IOException e) {
             System.err.println("Error closing resources: " + e.getMessage());
@@ -104,7 +111,7 @@ public class ClientHandler implements Runnable {
 
     public String getMessage() throws IOException {
         long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < 5000) {  // Тайм-аут 5 секунд
+        while (System.currentTimeMillis() - startTime < 500) {  // Тайм-аут 5 секунд
             String message = reader.readLine();
             if (message != null && !message.trim().isEmpty()) {
                 return message;

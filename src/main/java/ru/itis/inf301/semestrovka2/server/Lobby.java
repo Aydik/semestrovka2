@@ -56,7 +56,7 @@ public class Lobby implements Runnable {
                     throw new RuntimeException(e);
                 }
 
-                if (message == null || message.trim().isEmpty() || message.equalsIgnoreCase("exit")) {
+                if (message.trim().isEmpty() || message.equalsIgnoreCase("exit")) {
                     // Обработка выхода игрока
                     clients.get(curClientIndex).sendMessage("Вы покинули игру.");
                     removeClient(clients.get(curClientIndex));  // Убираем игрока из лобби
@@ -64,13 +64,18 @@ public class Lobby implements Runnable {
                         sendMessage("Игра завершена. Все игроки покинули лобби.");
                         break;
                     } else {
-                        sendMessage("Игрок " + (curClientIndex + 1) + " покинул игру. Осталось " + clients.size() + " игроков.");
+                        sendMessage("Игрок покинул игру.");
                     }
                 } else {
-                    sendMessage("Игрок " + (curClientIndex + 1) + ": " + message);
-                    curClientIndex = (curClientIndex + 1) % clients.size();  // Переводим очередь на следующего игрока
+                    if(message.startsWith("STEP ")) {
+                        String step = message.substring("STEP ".length());
+                        board = new Board(step);
+                        curClientIndex = board.getStep();
+                        sendStepToCurrentPlayer(curClientIndex, board.toString());
+                    }
                 }
             }
+            closeLobby();
         }
     }
 
@@ -87,7 +92,11 @@ public class Lobby implements Runnable {
         }
     }
 
-    public void sendMessageToCurrentPlayer(int playerIndex, String message) {
-        clients.get(playerIndex).sendMessage(message);
+    public void sendStepToCurrentPlayer(int playerIndex, String step) {
+        clients.get(playerIndex).sendStep(step);
+    }
+
+    public void closeLobby() {
+        Server.removeLobby(this);
     }
 }

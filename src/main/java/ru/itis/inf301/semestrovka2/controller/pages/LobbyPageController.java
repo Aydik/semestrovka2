@@ -20,9 +20,6 @@ public class LobbyPageController implements RootPane {
     @FXML
     public Text lobbyId;
 
-    @FXML
-    public void initialize() { }
-
     public void setClientService(ClientService clientService) {
         this.clientService = clientService;
         lobbyId.setText(Integer.toString(clientService.getLobby_id()));
@@ -55,11 +52,11 @@ public class LobbyPageController implements RootPane {
                 }
                 message = message.replace("MESSAGE ", "");
                 if (message.startsWith("You have joined the lobby")) {
-                    clientService.setClient_index(Integer.parseInt(message.split(" ")[-1]));
+                    String[] messageArr = message.split(" ");
+                    client.setClient_index(Integer.parseInt(messageArr[messageArr.length - 1]));
                 }
                 if (message.trim().equals("Game started!")) {
                     System.out.println("Received started!");
-                    System.out.println(clientService.getLobby_id());
                     Platform.runLater(() -> {
                         rootPane.getChildren().clear();
                         FXMLLoaderUtil.loadFXMLToPane("/view/templates/game.fxml", rootPane, clientService);

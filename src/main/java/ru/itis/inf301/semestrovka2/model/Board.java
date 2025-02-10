@@ -2,6 +2,7 @@ package ru.itis.inf301.semestrovka2.model;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.Random;
 
@@ -10,14 +11,15 @@ import static java.lang.Math.min;
 
 @Getter
 @Setter
+@ToString
 public class Board {
     private int user0_x;
     private int user0_y;
     private int user1_x;
     private int user1_y;
+    private int step;
     private int[][] vertical = new int[9][8];
     private int[][] horizontal = new int[8][9];
-    private int step;
 
 
     public Board() {
@@ -38,6 +40,62 @@ public class Board {
         Random random = new Random();
         step = random.nextInt(2);
     }
+
+    public Board(String input) {
+        String[] parts = input.substring(6, input.length() - 1).replace(" ", "").split("vertical=");
+        String[] pairs = parts[0].split(",");
+
+        for (String pair : pairs) {
+            String[] keyValue = pair.split("=");
+            String key = keyValue[0];
+            String value = keyValue[1];
+
+            switch (key) {
+                case "user0_x":
+                    this.user0_x = Integer.parseInt(value);
+                    break;
+                case "user0_y":
+                    this.user0_y = Integer.parseInt(value);
+                    break;
+                case "user1_x":
+                    this.user1_x = Integer.parseInt(value);
+                    break;
+                case "user1_y":
+                    this.user1_y = Integer.parseInt(value);
+                    break;
+                case "step":
+                    this.step = Integer.parseInt(value);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown key: " + key);
+            }
+        }
+        String[] arrays = parts[1].split(",horizontal=");
+        this.vertical = parseArray(arrays[0]);
+        this.horizontal = parseArray(arrays[1]);
+    }
+
+    private int[][] parseArray(String arrayString) {
+        // Удаляем внешние скобки
+        arrayString = arrayString.substring(1, arrayString.length() - 1);
+        // Разделяем на строки массива
+        String[] rows = arrayString.split("\\],\\[");
+        int[][] array = new int[rows.length][];
+
+        for (int i = 0; i < rows.length; i++) {
+            // Удаляем лишние скобки и разделяем на элементы
+            String row = rows[i].replace("[", "").replace("]", "");
+            String[] elements = row.split(",");
+            array[i] = new int[elements.length];
+
+            for (int j = 0; j < elements.length; j++) {
+                array[i][j] = Integer.parseInt(elements[j]);
+            }
+        }
+
+        return array;
+    }
+
 
     public int checkResult() {
         if (user0_y == 8) return 0;
