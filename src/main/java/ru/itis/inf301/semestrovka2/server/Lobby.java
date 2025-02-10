@@ -43,9 +43,12 @@ public class Lobby implements Runnable {
 
     @Override
     public void run() {
-        board = new Board();
         if (started) {
             sendMessage("Game started!");
+
+            Board board = new Board();
+            sendStep(board.toString());
+
             int curClientIndex = board.getStep();
             String message;
             while (clients.size() == 2) {
@@ -89,6 +92,12 @@ public class Lobby implements Runnable {
     public void sendMessage(String message) {
         for (ClientHandler client : clients) {
             client.sendMessage(message);
+        }
+    }
+
+    public void sendStep(String step) {
+        for (ClientHandler client : clients) {
+            client.sendStep(step);
         }
     }
 

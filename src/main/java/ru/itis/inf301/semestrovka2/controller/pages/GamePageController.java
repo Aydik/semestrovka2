@@ -17,7 +17,6 @@ import ru.itis.inf301.semestrovka2.client.ClientService;
 import ru.itis.inf301.semestrovka2.controller.util.FXMLLoaderUtil;
 import ru.itis.inf301.semestrovka2.model.Board;
 
-import static java.lang.Thread.sleep;
 
 @Getter
 @Setter
@@ -40,12 +39,12 @@ public class GamePageController implements RootPane {
         startGame();
     }
 
-
     public void renderBoard() {
         Platform.runLater(() -> {
+            Board board = client.getBoard();
+            boolean reverse = client.getClient_index() == 1;
             gridPane.getChildren().clear();
-            Board board = clientService.getClient().getBoard();
-            textHod.setText("Ходит user" + board.getStep());
+            textHod.setText(board.getStep() == client.getClient_index() ? "Ваш ход!" : "Ход соперника!");
             for (int row = 0; row < 17; row++) {
                 for (int col = 0; col < 17; col++) {
                     Rectangle rect;
@@ -53,7 +52,7 @@ public class GamePageController implements RootPane {
                     if (row % 2 == 1 && col % 2 == 1) {
                         rect = new Rectangle(10, 10, Color.valueOf("#FAE7B5"));
                     } else if (row % 2 == 1) {
-                        int finalRow = row / 2;
+                        int finalRow = reverse ? 7 - row / 2: row / 2;;
                         int finalCol = col / 2;
                         if (board.getHorizontal()[finalRow][finalCol] == 1) {
                             rect = new Rectangle(60, 10, Color.valueOf("#79553D"));
@@ -64,7 +63,7 @@ public class GamePageController implements RootPane {
                             putHorizontalWall(finalRow, finalCol);
                         });
                     } else if (col % 2 == 1) {
-                        int finalRow = row / 2;
+                        int finalRow = reverse ? 8 - row / 2: row / 2;
                         int finalCol = col / 2;
                         if (board.getVertical()[finalRow][finalCol] == 1) {
                             rect = new Rectangle(10, 60, Color.valueOf("#79553D"));
@@ -75,14 +74,19 @@ public class GamePageController implements RootPane {
                             putVerticalWall(finalRow, finalCol);
                         });
                     } else {
-                        int finalRow = row / 2;
+                        int finalRow = reverse ? 8 - row / 2: row / 2;
                         int finalCol = col / 2;
                         rect = new Rectangle(60, 60, Color.valueOf("#FFCA86"));
+
+                        Color userColor = Color.valueOf("#007FFF");
+                        Color opponentColor = Color.valueOf("#C41E3A");
+
                         if (board.getUser0_x() == finalRow && board.getUser0_y() == finalCol) {
-                            circle = new Circle(30, 30, 25, Color.valueOf("#007FFF"));
+                            circle = new Circle(30, 30, 25, reverse ? opponentColor : userColor);
                         } else if (board.getUser1_x() == finalRow && board.getUser1_y() == finalCol) {
-                            circle = new Circle(30, 30, 25, Color.valueOf("#C41E3A"));
+                            circle = new Circle(30, 30, 25, reverse ? userColor : opponentColor);
                         }
+
                         rect.setOnMouseClicked(event -> {
                             move(finalRow, finalCol);
                         });
@@ -97,6 +101,7 @@ public class GamePageController implements RootPane {
             }
         });
     }
+
 
     public void move(int finalRow, int finalCol) {
 
@@ -115,22 +120,32 @@ public class GamePageController implements RootPane {
 
     public void startGame() {
         new Thread(() -> {
-            while (true) {
+            boolean flag = true;
+            while (flag) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     System.out.println(e);
                 }
-                renderBoard();
+
+                int result = client.checkResult();
+                if(result == -1) renderBoard();
+                else {
+                    flag = false;
+                    redirectToWinPage(result == 1);
+                }
             }
 
         }).start();
     }
 
-    public void redirectToWinPage(int result) {
-        System.out.println(result);
-        rootPane.getChildren().clear();
-        FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane, clientService);
+    public void redirectToWinPage(boolean win) {
+        Platform.runLater(() -> {
+            System.out.println("Победил: " + win);
+            rootPane.getChildren().clear();
+            // поменять редирект
+            FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane, clientService);
+        });
     }
 
 
@@ -139,3 +154,5 @@ public class GamePageController implements RootPane {
         this.rootPane = pane;
     }
 }
+
+

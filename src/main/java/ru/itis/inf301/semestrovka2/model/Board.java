@@ -98,8 +98,8 @@ public class Board {
 
 
     public int checkResult() {
-        if (user0_y == 8) return 0;
-        if (user1_y == 0) return 1;
+        if (user0_x == 0) return 0;
+        if (user1_x == 8) return 1;
         return -1;
     }
 

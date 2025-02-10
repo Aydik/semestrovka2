@@ -29,7 +29,6 @@ public class Client {
 
             startReadingMessages();
 
-            board = new Board();
             updateBoard();
 
         } catch (IOException e) {
@@ -67,7 +66,7 @@ public class Client {
     public void sendMessage(String message) {
         try {
             if (out != null && !clientSocket.isClosed() && !clientSocket.isOutputShutdown()) {
-                System.out.println("Sending message: " + message);
+                System.out.println("\nSending message: " + message);
                 out.write(message + "\n");
                 out.flush();
             } else {
@@ -141,5 +140,11 @@ public class Client {
         if (board.putHorizontalWall(client_index, finalRow, finalCol)) {
             sendMessage("STEP " + board);
         }
+    }
+
+    public int checkResult(){
+        if (board.checkResult() == -1) return -1;
+        closeResources();
+        return board.checkResult() == client_index ? 1 : 0;
     }
 }
