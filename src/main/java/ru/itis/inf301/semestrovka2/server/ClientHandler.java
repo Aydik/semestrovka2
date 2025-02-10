@@ -89,7 +89,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void closeResources() {
+    public void closeResources() {
         try {
             if (reader != null) {
                 reader.close();
@@ -101,9 +101,9 @@ public class ClientHandler implements Runnable {
                 socket.close();
             }
             Server.removeClient(this);
-            if (clientLobby != null) {
-                clientLobby.closeLobby();
-            }
+//            if (clientLobby != null) {
+//                clientLobby.closeLobby();
+//            }
         } catch (IOException e) {
             System.err.println("Error closing resources: " + e.getMessage());
         }

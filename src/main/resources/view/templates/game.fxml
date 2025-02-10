@@ -2,6 +2,7 @@
 
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Text?>
+<?import javafx.scene.control.Button?>
 <VBox alignment="CENTER" spacing="20" AnchorPane.bottomAnchor="50" AnchorPane.leftAnchor="50"
       AnchorPane.rightAnchor="50" AnchorPane.topAnchor="50"
       xmlns="http://javafx.com/javafx/11.0.14-internal"
@@ -10,4 +11,5 @@
       fx:controller="ru.itis.inf301.semestrovka2.controller.pages.GamePageController">
     <Text fx:id="textHod"/>
     <GridPane fx:id="gridPane"/>
+    <Button text="Выйти в меню" onAction="#handleButtonAction"/>
 </VBox>

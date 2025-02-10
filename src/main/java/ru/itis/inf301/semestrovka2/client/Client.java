@@ -19,6 +19,8 @@ public class Client {
     private int client_index;
     @Getter @Setter
     private Board board;
+    @Getter @Setter
+    private boolean gameOver = false;
 
     public void connect() {
         try {
@@ -46,6 +48,16 @@ public class Client {
                             steps.add(serverMessage);
                             System.out.println("\n" + serverMessage);
                         } else if (serverMessage.startsWith("MESSAGE")) {
+                            System.out.println(serverMessage);
+                            if (
+                                    serverMessage.contains("Вы покинули игру.") ||
+                                    serverMessage.contains("Игра завершена. Все игроки покинули лобби.") ||
+                                    serverMessage.contains("MESSAGE Игрок покинул игру.")
+
+                            ) {
+                                gameOver = true;
+                                closeResources();
+                            }
                             messages.add(serverMessage);
                         }
                     }
@@ -106,6 +118,7 @@ public class Client {
         new Thread(() -> {
             String step;
             while (true) {
+
                 step = getStep();
 
                 if (step == null) {
@@ -116,6 +129,7 @@ public class Client {
                     }
                     continue;
                 }
+
 
                 step = step.replace("STEP ", "");
                 board = new Board(step);

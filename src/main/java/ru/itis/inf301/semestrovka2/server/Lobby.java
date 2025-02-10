@@ -34,6 +34,7 @@ public class Lobby implements Runnable {
     }
 
     public void removeClient(ClientHandler client) {
+//        client.closeResources();
         clients.remove(client);
     }
 
@@ -56,7 +57,9 @@ public class Lobby implements Runnable {
                 try {
                     message = clients.get(curClientIndex).getMessage();
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    clients.get(curClientIndex).closeResources();
+                    clients.remove(curClientIndex);
+                    break;
                 }
 
                 if (message.trim().isEmpty() || message.equalsIgnoreCase("exit")) {
@@ -68,6 +71,7 @@ public class Lobby implements Runnable {
                         break;
                     } else {
                         sendMessage("Игрок покинул игру.");
+                        break;
                     }
                 } else {
                     if(message.startsWith("STEP ")) {
@@ -106,6 +110,9 @@ public class Lobby implements Runnable {
     }
 
     public void closeLobby() {
+        for (ClientHandler client : clients) {
+            client.closeResources();
+        }
         Server.removeLobby(this);
     }
 }

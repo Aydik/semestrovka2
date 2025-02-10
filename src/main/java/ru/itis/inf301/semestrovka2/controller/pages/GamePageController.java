@@ -1,6 +1,7 @@
 package ru.itis.inf301.semestrovka2.controller.pages;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
@@ -40,7 +41,11 @@ public class GamePageController implements RootPane {
     }
 
     public void renderBoard() {
+
         Platform.runLater(() -> {
+            if (client.isGameOver()) {
+                redirectToMainPage();
+            }
             Board board = client.getBoard();
             boolean reverse = client.getClient_index() == 1;
             gridPane.getChildren().clear();
@@ -122,6 +127,9 @@ public class GamePageController implements RootPane {
         new Thread(() -> {
             boolean flag = true;
             while (flag) {
+                if (client.isGameOver()) {
+                    break;
+                }
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -152,6 +160,24 @@ public class GamePageController implements RootPane {
     @Override
     public void setRootPane(Pane pane) {
         this.rootPane = pane;
+    }
+
+    public void handleButtonAction(ActionEvent actionEvent) {
+        if (textHod.getText().equals("Ваш ход!")) {
+            client.setGameOver(true);
+            client.sendMessage("exit");
+            clientService.disconnect();
+            redirectToMainPage();
+        }
+
+    }
+    public void redirectToMainPage() {
+
+        Platform.runLater(() -> {
+            rootPane.getChildren().clear();
+            // поменять редирект
+            FXMLLoaderUtil.loadFXMLToPane("/view/templates/main-menu.fxml", rootPane);
+        });
     }
 }
 
